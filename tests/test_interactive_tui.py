@@ -3,6 +3,7 @@
 import os
 from unittest.mock import MagicMock
 
+from betteragy.ui.account_flows import save_oauth_account
 from betteragy.ui.interactive_screens import MAIN_MENU_ITEMS
 from betteragy.ui.interactive_tui import InteractiveTUI
 from betteragy.ui.key_listener import (
@@ -112,9 +113,41 @@ def test_main_menu_enter_transitions_screen():
     assert tui.current_screen == "switch_account"
 
 
-def test_switch_screen_esc_returns_to_main():
-    """Verify ESC on switch screen goes back to main screen."""
+def test_main_menu_enter_add_account():
+    """Verify Enter on 'Add Account' opens add_account screen."""
+    tui = InteractiveTUI()
+    # Find Add Account index
+    add_idx = next(i for i, item in enumerate(MAIN_MENU_ITEMS) if "Add Account" in item[0])
+    tui.menu_idx = add_idx
+    should_exit = tui._handle_main_key(KEY_ENTER)
+    assert should_exit is False
+    assert tui.current_screen == "add_account"
+
+
+def test_account_list_screen_esc_returns_to_main():
+    """Verify ESC on account list screen goes back to main screen."""
     tui = InteractiveTUI()
     tui.current_screen = "switch_account"
-    tui._handle_switch_key(KEY_ESC)
+    tui._handle_account_list_key(KEY_ESC)
     assert tui.current_screen == "main"
+
+
+def test_add_account_screen_esc_returns_to_main():
+    """Verify ESC on add account screen goes back to main screen."""
+    tui = InteractiveTUI()
+    tui.current_screen = "add_account"
+    tui._handle_add_account_key(KEY_ESC)
+    assert tui.current_screen == "main"
+
+
+def test_save_oauth_account():
+    """Verify saving oauth tokens creates valid AccountRecord."""
+    mock_acc_svc = MagicMock()
+    oauth_res = {
+        "tokens": {"refresh_token": "mock_rf", "access_token": "mock_at"},
+        "user_info": {"email": "test@example.com", "name": "Tester"},
+    }
+    rec = save_oauth_account(mock_acc_svc, oauth_res)
+    assert rec is not None
+    assert rec.email == "test@example.com"
+    mock_acc_svc.add_or_update_account.assert_called_once()

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Arrow key navigation (`↑`/`↓` or `k`/`j`), `Enter` to select, `Esc`/`b` to go back, `q` to exit.
   - Alternate terminal screen buffer (`\033[?1049h`) with clean terminal state restoration on exit.
   - Interactive account selector, live quota view with manual refresh (`r`), usage KPIs, and rotate/cooldown triggers.
+  - In-TUI Account Management: Direct Google browser OAuth authentication with live background listener, headless token prompt, and interactive account deletion directly from the TUI without leaving to the shell.
 
 ### Changed
 - **ASCII-First Terminal Interface**:

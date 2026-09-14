@@ -3,34 +3,17 @@
 import sys
 import time
 from rich.console import Console, Group
-from rich.panel import Panel
-from rich.syntax import Syntax
 
-from ..commands.shell_cmd import SHELL_SNIPPET
 from ..services.account_service import AccountService
 from ..services.quota_aggregator import QuotaAggregator
 from ..services.quota_service import QuotaService
 from ..services.rotation_service import RotationService
 from ..services.usage_aggregator import UsageAggregator
-from .cards import render_kpi_cards
-from .interactive_screens import (
-    MAIN_MENU_ITEMS,
-    render_account_selector_panel,
-    render_footer_hints,
-    render_main_menu_panel,
-)
-from .key_listener import (
-    KEY_BACK,
-    KEY_DOWN,
-    KEY_ENTER,
-    KEY_ESC,
-    KEY_QUIT,
-    KEY_REFRESH,
-    KEY_UP,
-    KeyListener,
-)
-from .tables import render_quota_table, render_top_conversations_table
-from .theme import BETTERAGY_THEME, DEFAULT_BOX
+from .account_flows import OAuthWorker, prompt_token_input_terminal, save_oauth_account
+from .interactive_renderer import build_screen_elements
+from .interactive_screens import MAIN_MENU_ITEMS
+from .key_listener import KEY_BACK, KEY_DOWN, KEY_ENTER, KEY_ESC, KEY_QUIT, KEY_REFRESH, KEY_UP, KeyListener
+from .theme import BETTERAGY_THEME
 
 
 class InteractiveTUI:
@@ -43,10 +26,12 @@ class InteractiveTUI:
         self.quota_agg = QuotaAggregator(self.acc_svc, self.quota_svc)
         self.rot_svc = RotationService(self.acc_svc)
         self.usage_agg = UsageAggregator()
+        self.oauth_worker = OAuthWorker()
 
         self.current_screen = "main"
         self.menu_idx = 0
         self.account_idx = 0
+        self.add_idx = 0
         self.status_message = ""
         self.cached_quota = None
         self.cached_report = None
@@ -66,6 +51,9 @@ class InteractiveTUI:
 
                     key = listener.read_key()
                     if not key:
+                        if self.current_screen == "oauth_waiting" and self.oauth_worker.done:
+                            self._finish_oauth()
+                            needs_redraw = True
                         time.sleep(0.03)
                         continue
 
@@ -73,9 +61,15 @@ class InteractiveTUI:
                     if self.current_screen == "main":
                         if self._handle_main_key(key):
                             break
-                    elif self.current_screen == "switch_account":
-                        if self._handle_switch_key(key):
+                    elif self.current_screen in ("switch_account", "remove_account"):
+                        if self._handle_account_list_key(key):
                             break
+                    elif self.current_screen == "add_account":
+                        self._handle_add_account_key(key)
+                    elif self.current_screen == "oauth_waiting":
+                        if key in (KEY_ESC, KEY_BACK, KEY_QUIT):
+                            self.current_screen = "main"
+                            self.status_message = "[yellow]OAuth login cancelled.[/yellow]"
                     elif self.current_screen in ("quota", "usage", "shell"):
                         if key == KEY_QUIT:
                             break
@@ -90,41 +84,10 @@ class InteractiveTUI:
             sys.stdout.flush()
 
     def _render_current_view(self) -> None:
-        """Render the active screen to terminal."""
+        """Render active screen elements to terminal."""
         sys.stdout.write("\033[2J\033[H")
         sys.stdout.flush()
-
-        elements = []
-        if self.status_message:
-            elements.append(Panel(self.status_message, style="bold green", box=DEFAULT_BOX))
-
-        active_acc = self.acc_svc.get_active_account()
-        active_email = active_acc.email if active_acc else "None"
-
-        if self.current_screen == "main":
-            elements.extend([render_main_menu_panel(self.menu_idx, active_email), render_footer_hints("main")])
-        elif self.current_screen == "switch_account":
-            accounts = self.acc_svc.get_accounts()
-            elements.extend([render_account_selector_panel(accounts, self.account_idx, active_email), render_footer_hints("sub")])
-        elif self.current_screen == "quota":
-            if not self.cached_quota and active_acc:
-                self.cached_quota = self.quota_agg.fetch_single_account(active_acc.email)
-            if self.cached_quota:
-                elements.append(render_quota_table(self.cached_quota))
-            else:
-                elements.append(Panel("[yellow]No active account or quota data available.[/yellow]", box=DEFAULT_BOX))
-            elements.append(render_footer_hints("sub"))
-        elif self.current_screen == "usage":
-            if not self.cached_report:
-                self.cached_report = self.usage_agg.get_report(period="all")
-            elements.append(render_kpi_cards(self.cached_report, active_acc))
-            if self.cached_report.top_conversations:
-                elements.append(render_top_conversations_table(self.cached_report))
-            elements.append(render_footer_hints("sub"))
-        elif self.current_screen == "shell":
-            syntax = Syntax(SHELL_SNIPPET, "bash", theme="monokai", line_numbers=False)
-            elements.extend([Panel(syntax, title="[bold cyan]>> Shell Integration[/bold cyan]", box=DEFAULT_BOX), render_footer_hints("sub")])
-
+        elements = build_screen_elements(self)
         self.console.print(Group(*elements))
 
     def _handle_main_key(self, key: str) -> bool:
@@ -147,6 +110,14 @@ class InteractiveTUI:
         self.status_message = ""
         if "Switch Account" in action:
             self.current_screen, self.account_idx = "switch_account", 0
+        elif "Add Account" in action:
+            self.current_screen, self.add_idx = "add_account", 0
+        elif "Remove Account" in action:
+            accounts = self.acc_svc.get_accounts()
+            if not accounts:
+                self.status_message = "[yellow]No accounts in pool to remove.[/yellow]"
+            else:
+                self.current_screen, self.account_idx = "remove_account", 0
         elif "Live AI Quotas" in action:
             self.cached_quota, self.current_screen = None, "quota"
         elif "Token Usage" in action:
@@ -157,18 +128,14 @@ class InteractiveTUI:
         elif "Set Cooldown" in action:
             ok, msg = self.rot_svc.set_cooldown(hours=4.0)
             self.status_message = f"[yellow]{msg}[/yellow]"
-        elif "Add Account" in action:
-            self.status_message = "To add an account, run: betteragy account add"
-        elif "Remove Account" in action:
-            self.status_message = "To remove an account, run: betteragy account remove <email>"
         elif "Shell Integration" in action:
             self.current_screen = "shell"
         elif "Exit" in action:
             return True
         return False
 
-    def _handle_switch_key(self, key: str) -> bool:
-        """Handle key input on account selector screen. Returns True to exit."""
+    def _handle_account_list_key(self, key: str) -> bool:
+        """Handle key input on account selector / remove screen."""
         accounts = self.acc_svc.get_accounts()
         if not accounts:
             self.current_screen = "main"
@@ -183,10 +150,38 @@ class InteractiveTUI:
             return True
         elif key == KEY_ENTER:
             target = accounts[self.account_idx]
-            ok, msg = self.acc_svc.switch_account(target.email)
-            self.status_message = f"[bold green][ok] {msg}[/bold green]" if ok else f"[red][x] {msg}[/red]"
+            if self.current_screen == "switch_account":
+                ok, msg = self.acc_svc.switch_account(target.email)
+                self.status_message = f"[bold green][ok] {msg}[/bold green]" if ok else f"[red][x] {msg}[/red]"
+            else:
+                self.acc_svc.remove_account(target.email)
+                self.status_message = f"[bold green][ok] Removed account: {target.email}[/bold green]"
             self.current_screen = "main"
         return False
+
+    def _handle_add_account_key(self, key: str) -> None:
+        """Handle selection in Add Account screen."""
+        if key in (KEY_UP, KEY_DOWN):
+            delta = -1 if key == KEY_UP else 1
+            self.add_idx = (self.add_idx + delta) % 2
+        elif key in (KEY_ESC, KEY_BACK):
+            self.current_screen = "main"
+        elif key == KEY_ENTER:
+            if self.add_idx == 0:
+                self.oauth_worker.start()
+                self.current_screen = "oauth_waiting"
+            else:
+                self.status_message = prompt_token_input_terminal(self.acc_svc)
+                self.current_screen = "main"
+
+    def _finish_oauth(self) -> None:
+        """Process background OAuth completion."""
+        rec = save_oauth_account(self.acc_svc, self.oauth_worker.result)
+        if rec:
+            self.status_message = f"[bold green][ok] Connected account: {rec.email}[/bold green]"
+        else:
+            self.status_message = "[red][!] Authentication cancelled or timed out.[/red]"
+        self.current_screen = "main"
 
 
 def run_interactive_tui():
