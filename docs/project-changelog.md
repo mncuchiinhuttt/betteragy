@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2026-09-14
 
 ### Added
+- **Interactive Arrow-Key TUI**:
+  - Full-screen interactive application like coding agents / lazygit.
+  - Arrow key navigation (`↑`/`↓` or `k`/`j`), `Enter` to select, `Esc`/`b` to go back, `q` to exit.
+  - Alternate terminal screen buffer (`\033[?1049h`) with clean terminal state restoration on exit.
+  - Interactive account selector, live quota view with manual refresh (`r`), usage KPIs, and rotate/cooldown triggers.
 - **Account Switchboard**:
   - Direct keyring credential injection (`go-keyring-base64` envelope) for `agy` CLI on macOS Keychain and Linux Secret Service.
   - Proactive OAuth token refresh to prevent 401 unauthenticated errors.
