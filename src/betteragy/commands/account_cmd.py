@@ -33,9 +33,9 @@ def account_switch(identifier: str = typer.Argument(..., help="Account index or 
     """Switch active account session for agy CLI and system keyring."""
     success, msg = acc_svc.switch_account(identifier)
     if success:
-        console.print(f"[bold green]✓ {msg}[/bold green]")
+        console.print(f"[bold green][ok] {msg}[/bold green]")
     else:
-        console.print(f"[bold red]✗ {msg}[/bold red]")
+        console.print(f"[bold red][!] {msg}[/bold red]")
         raise typer.Exit(1)
 
 
@@ -53,7 +53,7 @@ def account_add(
             uinfo = fetch_user_info(tokens["access_token"])
             email = uinfo.get("email")
             if not email:
-                console.print("[bold red]✗ Failed to retrieve user email with provided token.[/bold red]")
+                console.print("[bold red][!] Failed to retrieve user email with provided token.[/bold red]")
                 raise typer.Exit(1)
             rec = AccountRecord(
                 email=email,
@@ -63,10 +63,10 @@ def account_add(
                 access_token=tokens["access_token"],
             )
             acc_svc.add_or_update_account(rec, make_active=True)
-            console.print(f"[bold green]✓ Connected and activated account via token: {rec.email}[/bold green]")
+            console.print(f"[bold green][ok] Connected and activated account via token: {rec.email}[/bold green]")
             return
         except Exception as e:
-            console.print(f"[bold red]✗ Invalid refresh token: {e}[/bold red]")
+            console.print(f"[bold red][!] Invalid refresh token: {e}[/bold red]")
             raise typer.Exit(1)
 
     console.print("[cyan]Opening browser for Google Antigravity authentication...[/cyan]")
@@ -85,7 +85,7 @@ def account_add(
         access_token=tokens["access_token"],
     )
     acc_svc.add_or_update_account(rec, make_active=True)
-    console.print(f"[bold green]✓ Account connected and set as active: {rec.email}[/bold green]")
+    console.print(f"[bold green][ok] Account connected and set as active: {rec.email}[/bold green]")
 
 
 @account_app.command("remove")
@@ -93,9 +93,9 @@ def account_remove(identifier: str = typer.Argument(..., help="Account index or 
     """Remove an account from your pool."""
     ok = acc_svc.remove_account(identifier)
     if ok:
-        console.print(f"[green]✓ Removed account: {identifier}[/green]")
+        console.print(f"[green][ok] Removed account: {identifier}[/green]")
     else:
-        console.print(f"[red]✗ Account not found: {identifier}[/red]")
+        console.print(f"[red][!] Account not found: {identifier}[/red]")
         raise typer.Exit(1)
 
 
@@ -107,9 +107,9 @@ def account_rotate(
     """Rotate to the next healthy account in sequence."""
     ok, msg = rot_svc.rotate(strategy=strategy, force=force)
     if ok:
-        console.print(f"[bold green]✓ {msg}[/bold green]")
+        console.print(f"[bold green][ok] {msg}[/bold green]")
     else:
-        console.print(f"[bold red]✗ {msg}[/bold red]")
+        console.print(f"[bold red][!] {msg}[/bold red]")
         raise typer.Exit(1)
 
 

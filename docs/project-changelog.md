@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Alternate terminal screen buffer (`\033[?1049h`) with clean terminal state restoration on exit.
   - Interactive account selector, live quota view with manual refresh (`r`), usage KPIs, and rotate/cooldown triggers.
 
+### Changed
+- **ASCII-First Terminal Interface**:
+  - Replaced all Unicode emojis, bullets, checkmarks, stars, and multi-width symbols with clean standard ASCII markers (`[~]`, `[#]`, `[$]`, `[*]`, `[!]`, `[+]`, `[-]`, `[>]`, `[x]`, `[ok]`, `|`, `[####----]`).
+  - Completely eliminates terminal font rendering glitches and double-width cell misalignment across different terminal emulators.
+
 ### Fixed
 - **TUI Arrow Key Escape Sequence Parsing**:
   - Replaced `sys.stdin.read(1)` with unbuffered `os.read(self.fd, 32)` in `key_listener.py` to prevent Python's `TextIOWrapper` from buffering subsequent escape sequence bytes (`[` and `B`), which previously caused `select()` to time out and mistakenly trigger `KEY_ESC`.

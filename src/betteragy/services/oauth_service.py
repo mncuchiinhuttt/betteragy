@@ -27,7 +27,7 @@ SUCCESS_HTML = """<!DOCTYPE html>
              margin: 0; background: #0d1117; color: #c9d1d9;">
   <div style="text-align: center; padding: 40px; background: #161b22;
               border-radius: 12px; border: 1px solid #30363d; max-width: 480px;">
-    <h1 style="color: #58a6ff; margin-bottom: 12px;">✅ Authenticated!</h1>
+    <h1 style="color: #58a6ff; margin-bottom: 12px;">[OK] Authenticated!</h1>
     <p style="font-size: 16px; line-height: 1.5; color: #8b949e;">
       Account <b style="color: #f0f6fc;">{email}</b> has been connected to Betteragy.<br>
       You can now close this browser tab and return to your terminal.

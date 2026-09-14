@@ -123,7 +123,7 @@ class InteractiveTUI:
             elements.append(render_footer_hints("sub"))
         elif self.current_screen == "shell":
             syntax = Syntax(SHELL_SNIPPET, "bash", theme="monokai", line_numbers=False)
-            elements.extend([Panel(syntax, title="[bold cyan]🐚 Shell Integration[/bold cyan]", box=DEFAULT_BOX), render_footer_hints("sub")])
+            elements.extend([Panel(syntax, title="[bold cyan]>> Shell Integration[/bold cyan]", box=DEFAULT_BOX), render_footer_hints("sub")])
 
         self.console.print(Group(*elements))
 
@@ -153,7 +153,7 @@ class InteractiveTUI:
             self.cached_report, self.current_screen = None, "usage"
         elif "Rotate Account" in action:
             ok, msg = self.rot_svc.rotate()
-            self.status_message = f"[bold green]✓ {msg}[/bold green]" if ok else f"[red]✗ {msg}[/red]"
+            self.status_message = f"[bold green][ok] {msg}[/bold green]" if ok else f"[red][x] {msg}[/red]"
         elif "Set Cooldown" in action:
             ok, msg = self.rot_svc.set_cooldown(hours=4.0)
             self.status_message = f"[yellow]{msg}[/yellow]"
@@ -184,7 +184,7 @@ class InteractiveTUI:
         elif key == KEY_ENTER:
             target = accounts[self.account_idx]
             ok, msg = self.acc_svc.switch_account(target.email)
-            self.status_message = f"[bold green]✓ {msg}[/bold green]" if ok else f"[red]✗ {msg}[/red]"
+            self.status_message = f"[bold green][ok] {msg}[/bold green]" if ok else f"[red][x] {msg}[/red]"
             self.current_screen = "main"
         return False
 

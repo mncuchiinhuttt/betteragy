@@ -30,8 +30,8 @@ def render_progress_bar(percentage: int, width: int = 14) -> str:
     else:
         color = "red"
 
-    bar = "█" * filled_len + "░" * empty_len
-    return f"[{color}]{bar}[/{color}] {pct:>3}%"
+    bar = "#" * filled_len + "-" * empty_len
+    return f"[{color}][{bar}][/{color}] {pct:>3}%"
 
 
 def format_tokens(num: int) -> str:
@@ -57,11 +57,11 @@ def format_cost(amount_usd: float) -> str:
 
 
 def format_status_badge(is_active: bool, is_cooldown: bool, disabled: bool) -> str:
-    """Render consistent status badge for account rows."""
+    """Render consistent ASCII status badge for account rows."""
     if disabled:
-        return "[dim red]✖ Disabled[/dim red]"
+        return "[dim red][x] Disabled[/dim red]"
     if is_cooldown:
-        return "[yellow]⏳ Rate Limited[/yellow]"
+        return "[yellow][!] Cooldown[/yellow]"
     if is_active:
-        return "[bold green]★ Active[/bold green]"
-    return "[green]● Ready[/green]"
+        return "[bold green][*] Active[/bold green]"
+    return "[green][+] Ready[/green]"

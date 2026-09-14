@@ -47,7 +47,7 @@ def run_live_dashboard(
                 report, quota, active_acc = fetch_data_callback()
                 view = build_dashboard_view(report, quota, active_acc)
                 footer = Panel(
-                    f"[dim]Auto-refreshing every {refresh_interval}s • Press Ctrl+C to exit • Betteragy[/dim]",
+                    f"[dim]Auto-refreshing every {refresh_interval}s | Press Ctrl+C to exit | Betteragy[/dim]",
                     box=DEFAULT_BOX,
                     style="dim",
                 )
