@@ -73,6 +73,10 @@ class KeyListener:
             return KEY_UP
         if ch in (b"j", b"J"):
             return KEY_DOWN
+        if ch in (b"r", b"R"):
+            return KEY_REFRESH
+        if ch in (b"b", b"B", b"\x08"):
+            return KEY_BACK
         return ch.decode("utf-8", errors="ignore")
 
     def _read_unix(self) -> Optional[str]:

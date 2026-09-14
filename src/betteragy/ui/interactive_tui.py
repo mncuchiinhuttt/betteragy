@@ -58,13 +58,18 @@ class InteractiveTUI:
 
         try:
             with KeyListener() as listener:
+                needs_redraw = True
                 while True:
-                    self._render_current_view()
+                    if needs_redraw:
+                        self._render_current_view()
+                        needs_redraw = False
+
                     key = listener.read_key()
                     if not key:
-                        time.sleep(0.04)
+                        time.sleep(0.03)
                         continue
 
+                    needs_redraw = True
                     if self.current_screen == "main":
                         if self._handle_main_key(key):
                             break
@@ -76,8 +81,8 @@ class InteractiveTUI:
                             break
                         if key in (KEY_ESC, KEY_BACK, KEY_ENTER):
                             self.current_screen = "main"
-                        elif key == KEY_REFRESH and self.current_screen == "quota":
-                            self.cached_quota = None
+                        elif key == KEY_REFRESH:
+                            self.cached_quota, self.cached_report = None, None
         except KeyboardInterrupt:
             pass
         finally:
@@ -106,6 +111,8 @@ class InteractiveTUI:
                 self.cached_quota = self.quota_agg.fetch_single_account(active_acc.email)
             if self.cached_quota:
                 elements.append(render_quota_table(self.cached_quota))
+            else:
+                elements.append(Panel("[yellow]No active account or quota data available.[/yellow]", box=DEFAULT_BOX))
             elements.append(render_footer_hints("sub"))
         elif self.current_screen == "usage":
             if not self.cached_report:
