@@ -17,15 +17,15 @@ class AccountService:
         self._storage: Optional[AccountsStorage] = None
 
     def get_storage(self) -> AccountsStorage:
-        """Get or lazily load accounts storage, auto-syncing from keyring if empty."""
+        """Get or lazily load accounts storage, auto-syncing from keyring."""
         if self._storage is None:
             self._storage = read_accounts_storage()
-            self._auto_import_from_keyring_if_empty()
+            self._auto_sync_from_keyring()
         return self._storage
 
-    def _auto_import_from_keyring_if_empty(self) -> None:
-        """If storage has no accounts, try importing currently active keyring token."""
-        if not self._storage or len(self._storage.accounts) > 0:
+    def _auto_sync_from_keyring(self) -> None:
+        """Inspect active keychain credential and import into accounts pool if not present."""
+        if not self._storage:
             return
         active_cred = KeyringAdapter.read_active_credential()
         if not active_cred or "token" not in active_cred:
@@ -33,24 +33,45 @@ class AccountService:
         token_info = active_cred["token"]
         refresh_token = token_info.get("refresh_token")
         access_token = token_info.get("access_token")
-        if not refresh_token or not access_token:
+        if not refresh_token:
             return
+
+        if any(a.refresh_token == refresh_token for a in self._storage.accounts):
+            return
+
         try:
-            uinfo = fetch_user_info(access_token)
+            uinfo = None
+            if access_token:
+                try:
+                    uinfo = fetch_user_info(access_token)
+                except Exception:
+                    pass
+            if not uinfo or "email" not in uinfo:
+                tokens = refresh_access_token(refresh_token)
+                access_token = tokens.get("access_token")
+                uinfo = fetch_user_info(access_token)
+
             email = uinfo.get("email")
-            if email:
+            if not email:
+                return
+
+            existing = next((a for a in self._storage.accounts if a.email.lower() == email.lower()), None)
+            if existing:
+                existing.refresh_token = refresh_token
+                existing.access_token = access_token or existing.access_token
+            else:
                 acc = AccountRecord(
                     email=email,
                     name=uinfo.get("name", ""),
                     picture=uinfo.get("picture", ""),
                     refresh_token=refresh_token,
-                    access_token=access_token,
+                    access_token=access_token or "",
                     expiry=token_info.get("expiry", ""),
                     last_used=time.time(),
                 )
                 self._storage.accounts.append(acc)
-                self._storage.active_email = email
-                write_accounts_storage(self._storage)
+
+            write_accounts_storage(self._storage)
         except Exception:
             pass
 
@@ -122,8 +143,7 @@ class AccountService:
             tokens = refresh_access_token(target.refresh_token)
             target.access_token = tokens["access_token"]
             expires_in = tokens.get("expires_in", 3600)
-            expiry_dt = datetime.fromtimestamp(time.time() + expires_in, timezone.utc)
-            target.expiry = expiry_dt.isoformat()
+            target.expiry = datetime.fromtimestamp(time.time() + expires_in, timezone.utc).isoformat()
             target.last_used = time.time()
             if "refresh_token" in tokens:
                 target.refresh_token = tokens["refresh_token"]
@@ -158,7 +178,6 @@ class AccountService:
             account.expiry = datetime.fromtimestamp(time.time() + expires_in, timezone.utc).isoformat()
             if "refresh_token" in tokens:
                 account.refresh_token = tokens["refresh_token"]
-            storage = self.get_storage()
-            write_accounts_storage(storage)
+            write_accounts_storage(self.get_storage())
 
         return account.access_token
