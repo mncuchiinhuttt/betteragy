@@ -1,5 +1,4 @@
-"""Typer CLI application entry point for Betteragy."""
-
+import sys
 from typing import Optional
 import typer
 from rich.console import Console
@@ -13,8 +12,8 @@ from .services.quota_aggregator import QuotaAggregator
 from .services.quota_service import QuotaService
 from .services.usage_aggregator import UsageAggregator
 from .ui.dashboard import run_live_dashboard
+from .ui.interactive_tui import run_interactive_tui
 from .ui.theme import BETTERAGY_THEME
-
 app = typer.Typer(
     name="betteragy",
     help="Rich CLI Switchboard & AI Token Analytics for Antigravity (agy)",
@@ -50,5 +49,23 @@ def dashboard_view(
     run_live_dashboard(fetch_dashboard_state, refresh_interval=interval, console=console)
 
 
+@app.callback(invoke_without_command=True)
+def main_callback(ctx: typer.Context):
+    """Launch interactive TUI menu when invoked without subcommands."""
+    if ctx.invoked_subcommand is None:
+        if sys.stdin.isatty():
+            run_interactive_tui()
+        else:
+            console.print(ctx.get_help())
+
+
+@app.command("menu")
+@app.command("ui")
+def menu_command():
+    """Launch interactive arrow-key TUI menu."""
+    run_interactive_tui()
+
+
 if __name__ == "__main__":
     app()
+
