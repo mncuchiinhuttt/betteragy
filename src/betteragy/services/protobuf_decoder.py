@@ -78,10 +78,9 @@ def extract_tokens_from_gen_metadata(blob: bytes) -> Optional[tuple[str, int, in
                 continue
             # Model name is in field 19 or within field 20
             model_name = "Unknown"
-            if 19 in f1 and f1[19]:
-                val = f1[19][0]
-                if isinstance(val, str):
-                    model_name = val
+            model_candidates = f1.get(19, []) or f1.get(20, [])
+            if model_candidates and isinstance(model_candidates[0], str):
+                model_name = model_candidates[0]
 
             # Token usage is in field 4
             f4_list = f1.get(4, [])
@@ -90,8 +89,13 @@ def extract_tokens_from_gen_metadata(blob: bytes) -> Optional[tuple[str, int, in
                     continue
                 inp = f4.get(1, [0])[0] if 1 in f4 else 0
                 cache = f4.get(2, [0])[0] if 2 in f4 else 0
-                out = f4.get(3, [0])[0] if 3 in f4 else 0
-                reas = f4.get(6, [0])[0] if 6 in f4 else 0
+                reas = f4.get(10, [0])[0] if 10 in f4 else 0
+                if 9 in f4:
+                    out = f4.get(9, [0])[0]
+                else:
+                    total_out = f4.get(3, [0])[0] if 3 in f4 else 0
+                    out = max(0, total_out - reas)
+
                 if any((inp, out, cache, reas)):
                     return (
                         model_name,

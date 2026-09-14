@@ -27,7 +27,8 @@ def build_screen_elements(tui) -> list:
     accounts = tui.acc_svc.get_accounts()
 
     if tui.current_screen == "main":
-        elements.extend([render_main_menu_panel(tui.menu_idx, active_email), render_footer_hints("main")])
+        update_ver = getattr(tui, "update_ver", None)
+        elements.extend([render_main_menu_panel(tui.menu_idx, active_email, update_ver=update_ver), render_footer_hints("main")])
     elif tui.current_screen == "switch_account":
         elements.extend([render_account_selector_panel(accounts, tui.account_idx, active_email), render_footer_hints("sub")])
     elif tui.current_screen == "remove_account":
@@ -52,5 +53,31 @@ def build_screen_elements(tui) -> list:
     elif tui.current_screen == "shell":
         syntax = Syntax(SHELL_SNIPPET, "bash", theme="monokai", line_numbers=False)
         elements.extend([Panel(syntax, title="[bold cyan]>> Shell Integration[/bold cyan]", box=DEFAULT_BOX), render_footer_hints("sub")])
+    elif tui.current_screen == "tasks":
+        from .task_renderer import render_ascii_task_board
+        sess_id = getattr(tui, "selected_session_id", None)
+        elements.extend([render_ascii_task_board(tui.task_db, session_id=sess_id), render_footer_hints("tasks")])
+    elif tui.current_screen == "session_selector":
+        from .session_flows import render_session_selector_panel
+        sessions = tui.task_db.list_sessions(limit=20)
+        elements.extend([render_session_selector_panel(sessions, tui.session_idx), render_footer_hints("session_selector")])
+    elif tui.current_screen == "harness":
+        from ..harness.harness_service import HarnessService
+        stat = HarnessService().status()
+        if stat["installed"]:
+            body = (
+                f"[bold green][ok] Harness is active[/bold green]\n\n"
+                f"[dim]Profile:[/] [cyan]{stat['profile']}[/cyan]\n"
+                f"[dim]Location:[/] [yellow]{stat['path']}[/yellow]\n"
+                f"[dim]Size:[/] {stat['size_bytes']} bytes\n\n"
+                f"[dim]Directives enforce deep reasoning, falsification, and To-Do planning.[/dim]"
+            )
+        else:
+            body = (
+                "[bold yellow][!] Harness is not installed[/bold yellow]\n\n"
+                "[dim]To install and activate in agy, run:[/] [cyan]betteragy harness install[/cyan]"
+            )
+        elements.extend([Panel(body, title="[~] Betteragy Reasoning Harness", box=DEFAULT_BOX), render_footer_hints("sub")])
 
     return elements
+

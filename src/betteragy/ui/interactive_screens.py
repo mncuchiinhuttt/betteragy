@@ -6,6 +6,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from .. import __version__
 from ..core.models import AccountRecord
 from .theme import DEFAULT_BOX, format_status_badge
 
@@ -17,9 +18,13 @@ MAIN_MENU_ITEMS = [
     ("[!] Set Cooldown", "Mark current account rate-limited for 4h and auto-rotate"),
     ("[+] Add Account", "Connect a new Google account via OAuth or direct token"),
     ("[-] Remove Account", "Delete an account from your local switchboard pool"),
+    ("[*] Tasks & Planning", "View active agy task board and verification progress"),
+    ("[^] Thinking Harness", "View deep reasoning harness rules and status"),
     ("[>] Shell Integration", "View bash/zsh wrapper function and aliases for agy"),
+    ("[?] Check for Updates", "Check GitHub releases for latest updates"),
     ("[x] Exit", "Exit Betteragy and return to shell"),
 ]
+
 
 ADD_ACCOUNT_METHODS = [
     ("[1] Browser Google OAuth", "Open system default browser to authenticate Google Account"),
@@ -27,10 +32,13 @@ ADD_ACCOUNT_METHODS = [
 ]
 
 
-def render_main_menu_panel(selected_idx: int, active_email: str) -> Panel:
+def render_main_menu_panel(selected_idx: int, active_email: str, update_ver: str | None = None) -> Panel:
     """Render the main interactive menu with cursor selection."""
     header = Text()
     header.append("Betteragy", style="bold cyan")
+    header.append(f" v{__version__}", style="bold yellow")
+    if update_ver:
+        header.append(f" [update: v{update_ver}]", style="bold green")
     header.append(" -- Interactive Switchboard & Token Analytics\n", style="bold white")
     header.append("Active Account: ", style="dim")
     header.append(f"{active_email or 'None'}\n", style="bold green")
@@ -138,6 +146,10 @@ def render_footer_hints(screen_name: str = "main") -> Panel:
         hints = "[bold cyan]Up/k[/bold cyan] Up  |  [bold cyan]Down/j[/bold cyan] Down  |  [bold green]Enter[/bold green] Select  |  [bold red]q[/bold red] Exit"
     elif screen_name == "oauth":
         hints = "[bold red]Esc/b[/bold red] Cancel Login  |  [bold red]q[/bold red] Exit"
+    elif screen_name == "tasks":
+        hints = "[bold cyan]Esc/b[/bold cyan] Menu  |  [bold cyan]Left/Right[/bold cyan] Switch Tab  |  [bold green]Enter[/bold green] Set Active  |  [bold yellow]r[/bold yellow] Refresh  |  [bold red]q[/bold red] Exit"
+    elif screen_name == "session_selector":
+        hints = "[bold cyan]Up/Down[/bold cyan] Navigate  |  [bold green]Enter[/bold green] Switch  |  [bold red]Esc/b[/bold red] Back"
     else:
         hints = "[bold cyan]Esc/b[/bold cyan] Back to Menu  |  [bold red]q[/bold red] Exit"
 

@@ -4,15 +4,18 @@ import sys
 import time
 from rich.console import Console, Group
 
+from ..mcp.task_db import TaskDB
 from ..services.account_service import AccountService
 from ..services.quota_aggregator import QuotaAggregator
 from ..services.quota_service import QuotaService
 from ..services.rotation_service import RotationService
+from ..services.update_service import UpdateService
 from ..services.usage_aggregator import UsageAggregator
-from .account_flows import OAuthWorker, prompt_token_input_terminal, save_oauth_account
+from .account_flows import OAuthWorker, finish_oauth, handle_account_list_key, handle_add_account_key
 from .interactive_renderer import build_screen_elements
 from .interactive_screens import MAIN_MENU_ITEMS
 from .key_listener import KEY_BACK, KEY_DOWN, KEY_ENTER, KEY_ESC, KEY_QUIT, KEY_REFRESH, KEY_UP, KeyListener
+from .session_flows import handle_session_selector_key, handle_tasks_key
 from .theme import BETTERAGY_THEME
 
 
@@ -27,11 +30,20 @@ class InteractiveTUI:
         self.rot_svc = RotationService(self.acc_svc)
         self.usage_agg = UsageAggregator()
         self.oauth_worker = OAuthWorker()
+        self.task_db = TaskDB()
+        self.update_svc = UpdateService()
+        self.update_ver = None
+        info = self.update_svc.check_for_updates(force=False)
+        if info and info.is_newer:
+            self.update_ver = info.latest_version
 
         self.current_screen = "main"
         self.menu_idx = 0
         self.account_idx = 0
         self.add_idx = 0
+        self.session_idx = 0
+        self.session_tab_idx = 0
+        self.selected_session_id = None
         self.status_message = ""
         self.cached_quota = None
         self.cached_report = None
@@ -52,7 +64,7 @@ class InteractiveTUI:
                     key = listener.read_key()
                     if not key:
                         if self.current_screen == "oauth_waiting" and self.oauth_worker.done:
-                            self._finish_oauth()
+                            finish_oauth(self)
                             needs_redraw = True
                         time.sleep(0.03)
                         continue
@@ -62,21 +74,28 @@ class InteractiveTUI:
                         if self._handle_main_key(key):
                             break
                     elif self.current_screen in ("switch_account", "remove_account"):
-                        if self._handle_account_list_key(key):
+                        if handle_account_list_key(self, key):
                             break
                     elif self.current_screen == "add_account":
-                        self._handle_add_account_key(key)
+                        handle_add_account_key(self, key)
                     elif self.current_screen == "oauth_waiting":
                         if key in (KEY_ESC, KEY_BACK, KEY_QUIT):
                             self.current_screen = "main"
                             self.status_message = "[yellow]OAuth login cancelled.[/yellow]"
-                    elif self.current_screen in ("quota", "usage", "shell"):
+                    elif self.current_screen == "tasks":
+                        if handle_tasks_key(self, key):
+                            break
+                    elif self.current_screen == "session_selector":
+                        if handle_session_selector_key(self, key):
+                            break
+                    elif self.current_screen in ("quota", "usage", "shell", "harness"):
                         if key == KEY_QUIT:
                             break
                         if key in (KEY_ESC, KEY_BACK, KEY_ENTER):
                             self.current_screen = "main"
                         elif key == KEY_REFRESH:
                             self.cached_quota, self.cached_report = None, None
+
         except KeyboardInterrupt:
             pass
         finally:
@@ -128,63 +147,40 @@ class InteractiveTUI:
         elif "Set Cooldown" in action:
             ok, msg = self.rot_svc.set_cooldown(hours=4.0)
             self.status_message = f"[yellow]{msg}[/yellow]"
+        elif "Tasks" in action:
+            self.current_screen = "tasks"
+        elif "Harness" in action:
+            self.current_screen = "harness"
         elif "Shell Integration" in action:
             self.current_screen = "shell"
+        elif "Updates" in action:
+            info = self.update_svc.check_for_updates(force=True)
+            if info and info.is_newer:
+                self.update_ver = info.latest_version
+                self.status_message = f"[bold yellow][!] Update available: v{info.latest_version}[/bold yellow] (Run: betteragy update)"
+            elif info:
+                self.status_message = f"[bold green][ok] Betteragy is up to date (v{info.current_version})[/bold green]"
+            else:
+                self.status_message = "[yellow][!] Could not check for updates (offline)[/yellow]"
         elif "Exit" in action:
             return True
         return False
 
     def _handle_account_list_key(self, key: str) -> bool:
-        """Handle key input on account selector / remove screen."""
-        accounts = self.acc_svc.get_accounts()
-        if not accounts:
-            self.current_screen = "main"
-            return False
-
-        if key in (KEY_UP, KEY_DOWN):
-            delta = -1 if key == KEY_UP else 1
-            self.account_idx = (self.account_idx + delta) % len(accounts)
-        elif key in (KEY_ESC, KEY_BACK):
-            self.current_screen = "main"
-        elif key == KEY_QUIT:
-            return True
-        elif key == KEY_ENTER:
-            target = accounts[self.account_idx]
-            if self.current_screen == "switch_account":
-                ok, msg = self.acc_svc.switch_account(target.email)
-                self.status_message = f"[bold green][ok] {msg}[/bold green]" if ok else f"[red][x] {msg}[/red]"
-            else:
-                self.acc_svc.remove_account(target.email)
-                self.status_message = f"[bold green][ok] Removed account: {target.email}[/bold green]"
-            self.current_screen = "main"
-        return False
+        return handle_account_list_key(self, key)
 
     def _handle_add_account_key(self, key: str) -> None:
-        """Handle selection in Add Account screen."""
-        if key in (KEY_UP, KEY_DOWN):
-            delta = -1 if key == KEY_UP else 1
-            self.add_idx = (self.add_idx + delta) % 2
-        elif key in (KEY_ESC, KEY_BACK):
-            self.current_screen = "main"
-        elif key == KEY_ENTER:
-            if self.add_idx == 0:
-                self.oauth_worker.start()
-                self.current_screen = "oauth_waiting"
-            else:
-                self.status_message = prompt_token_input_terminal(self.acc_svc)
-                self.current_screen = "main"
+        handle_add_account_key(self, key)
 
-    def _finish_oauth(self) -> None:
-        """Process background OAuth completion."""
-        rec = save_oauth_account(self.acc_svc, self.oauth_worker.result)
-        if rec:
-            self.status_message = f"[bold green][ok] Connected account: {rec.email}[/bold green]"
-        else:
-            self.status_message = "[red][!] Authentication cancelled or timed out.[/red]"
-        self.current_screen = "main"
+    def _handle_tasks_key(self, key: str) -> bool:
+        return handle_tasks_key(self, key)
+
+    def _handle_session_selector_key(self, key: str) -> bool:
+        return handle_session_selector_key(self, key)
 
 
 def run_interactive_tui():
     """Launch the interactive TUI application."""
     app = InteractiveTUI()
     app.run()
+

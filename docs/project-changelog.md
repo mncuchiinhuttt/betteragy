@@ -5,12 +5,95 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-09-14
+
+### Added
+- **Multi-Session Task Planning & Process Isolation**:
+  - **Concurrent Session Engine (`task_db.py`, `task_schema.py`)**: Enhanced SQLite schema with `sessions` table tracking `id`, `goal`, `project_name`, `working_dir`, `created_at`, `updated_at`, `is_active`. Fully supports concurrent `agy` processes running across different workspaces or terminal tabs without collisions.
+  - **MCP Process Session Affinity (`todo_server.py`, `todo_tools.py`)**: `TodoServer` stdio process automatically binds `session_id` upon `todo_init` and maintains session affinity across all subsequent tool calls (`todo_add`, `todo_update`, `todo_list`, `todo_clear`).
+  - **CLI Session Management Commands (`tasks_cmd.py`, `task_renderer.py`)**:
+    - Added `betteragy tasks sessions` to list all planning sessions with goal, project, completion %, and task counts.
+    - Added `betteragy tasks switch <id>` to switch active session focus.
+    - Added `--session <id>` flag to `betteragy tasks`, `betteragy tasks watch`, `betteragy tasks clear`, and `betteragy tasks add`.
+  - **Horizontal Multi-Tab Session Bar with Left/Right Navigation**:
+    - Embedded dynamic horizontal session tabs (`render_session_tab_bar`) at the top of the Task Board showing session ID, project name, and verification completion %.
+    - Interactive Left/Right arrow keys (`KEY_LEFT`, `KEY_RIGHT`, `h`, `l`) to cycle smoothly through session tabs in both the interactive TUI and `betteragy tasks watch` CLI mode.
+    - Sliding window layout with `[< Left]` and `[Right >]` edge markers when sessions exceed visible width.
+    - Pressing `Enter` on any tab promotes that session to the globally active session.
+  - **Interactive TUI Session Browser & Switcher (`session_flows.py`, `session_panels.py`, `interactive_tui.py`)**:
+    - Press `s` in `Tasks & Planning` screen to open the interactive session list modal.
+    - Navigate sessions with Up/Down and press Enter to switch the active session.
+  - **ASCII Tree Checklist Output (`todo_tools.py`, `strict_harness.md`)**:
+    - Implemented `format_tasks_ascii_tree` producing single-width ASCII tree checklist format (`|--`, `'--`, `` `----- ``) with task status markers (`[x]` Completed, `[>]` In Progress, `[ ]` Pending, `[!]` Blocked) and completion ratios (`X/Y`).
+    - Injected strict formatting requirements into global reasoning harness so `agy` outputs identical ASCII tree checklists in conversational responses.
+  - **GitHub Update Checker Service (`update_service.py`, `cli.py`, `interactive_tui.py`)**:
+    - Added `UpdateService` to check GitHub Releases and Tags API with 2.0s low-latency timeout and 4-hour local caching in `~/.config/betteragy/update_cache.json`.
+    - Added `betteragy update` and `betteragy check-update` CLI commands with update panel and upgrade instructions.
+    - Added `[?] Check for Updates` to interactive TUI menu with dynamic `[update: vX.X.X]` header badge.
+  - **Decoupled Architecture & Strict File Size Guardrail**:
+    - Created `task_schema.py` (40 lines), `session_panels.py` (153 lines), and `session_flows.py` (60 lines) ensuring all source files stay strictly `< 200 lines`.
+  - **Comprehensive Test Coverage**:
+    - Added multi-session isolation tests, session affinity tests, and tab cycling tests in `test_session_tabs.py` (49/49 tests passing in 0.34s).
+
+## [1.0.0] - 2026-09-14
+
+### Added
+- **Official Version Management (`v1.0.0`)**:
+  - Unified version metadata across `src/betteragy/__init__.py` and `pyproject.toml`.
+  - Added CLI `--version` / `-V` flags and `betteragy version` command.
+  - Rendered version badge `v1.0.0` in the interactive TUI menu header and live dashboard footer.
+- **Deep Reasoning & Verification Harness (`betteragy harness`)**:
+  - Automatically installs and manages a 5-phase strict reasoning and falsification protocol into `~/.gemini/config/rules/betteragy-harness.md`.
+  - Automatically loaded by `agy` on startup as `<RULE[user_global]>`.
+  - Enforces mandatory planning, exploration before editing, compile checking after edits, and evidence-backed task completion.
+  - Profile switching (`strict` vs `balanced`) via `betteragy harness install --profile <strict|balanced>`.
+- **Built-in To-Do MCP Server (`betteragy.mcp.todo_server`)**:
+  - Native JSON-RPC 2.0 stdio MCP server registered into `~/.gemini/config/mcp_config.json` and `~/.gemini/settings.json`.
+  - Gives `agy` native function calling tools: `todo_init`, `todo_add`, `todo_update`, `todo_list`, `todo_clear`.
+  - Persisted in SQLite WAL mode (`~/.config/betteragy/tasks.db`) for concurrent multi-process access.
+- **ASCII Task Planning Visualizer (`betteragy tasks`)**:
+  - Live ASCII task board rendering (`[ ]` Pending, `[>]` In Progress, `[ok]` Completed, `[x]` Blocked) with progress bar and evidence notes.
+  - Real-time terminal watcher (`betteragy tasks --watch`) refreshing live as `agy` executes tasks.
+  - Integrated into TUI menu as `[*] Tasks & Planning` and `[^] Thinking Harness`.
+- **Agent Launcher & Alias Helper (`betteragy agent`)**:
+  - Launches `agy` with high reasoning effort (`--effort high`).
+  - `betteragy agent setup-alias` to automatically configure `alias agy="agy --effort high"` in `~/.zshrc`.
+
+### Fixed
+- **Harness Injection into Global Rules (`GEMINI.md`)**:
+  - Resolved issue where `agy` did not see the Betteragy Harness because rules were saved to `~/.gemini/config/rules/` instead of `~/.gemini/GEMINI.md`.
+  - `HarnessService` now manages bounded injection blocks (`<!-- BETTERAGY_HARNESS_START -->` ... `<!-- BETTERAGY_HARNESS_END -->`) directly in `~/.gemini/GEMINI.md`, ensuring `agy` automatically loads the harness as `<RULE[user_global]>`.
+  - Updated harness prompt instructions with explicit MCP invocation syntax: direct `todo_init(goal=...)` and `call_mcp_tool(ServerName='betteragy-todo', ToolName='todo_init', Arguments={'goal': '...'})`.
+- **Token Telemetry Extraction (`protobuf_decoder.py`)**:
+  - Fixed reasoning tokens extraction: read thinking tokens from protobuf field 10 (`f4[10]`) instead of static flags field 6 (`f4[6] = 24`).
+  - Extracted visible response tokens from field 9 (`f4[9]`), preserving `total_output = f9 + f10 = f3`.
+  - Solved double-billing issue by ensuring total output does not add reasoning tokens twice.
+- **MCP Server Protocol Negotiation (`betteragy-todo`)**:
+  - Fixed `error: invalid request` error when initialized by `agy` CLI's Go MCP client.
+  - Implemented SEP-2575 `server/discover` RPC supporting protocol version `2026-07-28` and `supportedVersions`.
+  - Dynamically echo requested `protocolVersion` (e.g. `2025-11-25`) during legacy `initialize` handshake fallback.
+  - Correctly ignored notifications without `id` per JSON-RPC 2.0 specification, avoiding spurious null-id error packets.
+  - Added empty handlers for `prompts/list`, `resources/list`, and `resources/templates/list`.
+
+### Changed
+- **Token Pricing Table to 2026 Market Rates (`pricing_service.py`)**:
+  - Updated pricing table with current official rates per 1M tokens:
+    - Gemini 3.8 / 3.7 Flash: Input $0.75, Output $3.75, Cache Read $0.075, Reasoning $3.75.
+    - Gemini 3.1 Pro: Input $2.00, Output $12.00, Cache Read $0.50, Reasoning $12.00.
+    - Gemini 2.5 Pro: Input $1.25, Output $10.00, Cache Read $0.3125, Reasoning $10.00.
+    - Gemini 2.5 Flash: Input $0.15, Output $0.60, Cache Read $0.0375.
+    - Gemini 2.0 Flash: Input $0.10, Output $0.40, Cache Read $0.025.
+    - Gemini 1.5 Flash: Input $0.075, Output $0.30, Cache Read $0.01875.
+    - Claude 3.7 / 3.5 Sonnet: Input $3.00, Output $15.00, Cache Read $0.30, Cache Write $3.75.
+    - Claude 3.5 Haiku: Input $0.80, Output $4.00, Cache Read $0.08, Cache Write $1.00.
+
 ## [0.1.0] - 2026-09-14
+
 
 ### Added
 - **Interactive Arrow-Key TUI**:
   - Full-screen interactive application like coding agents / lazygit.
-  - Arrow key navigation (`↑`/`↓` or `k`/`j`), `Enter` to select, `Esc`/`b` to go back, `q` to exit.
+  - Arrow key navigation (Up/Down or k/j), Enter to select, Esc/b to go back, q to exit.
   - Alternate terminal screen buffer (`\033[?1049h`) with clean terminal state restoration on exit.
   - Interactive account selector, live quota view with manual refresh (`r`), usage KPIs, and rotate/cooldown triggers.
   - In-TUI Account Management: Direct Google browser OAuth authentication with live background listener, headless token prompt, and interactive account deletion directly from the TUI without leaving to the shell.

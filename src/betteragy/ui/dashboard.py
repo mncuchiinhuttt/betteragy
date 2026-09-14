@@ -6,6 +6,7 @@ from rich.console import Console, Group
 from rich.live import Live
 from rich.panel import Panel
 
+from .. import __version__
 from ..core.models import AccountQuota, AccountRecord, DeepUsageReport
 from .cards import render_kpi_cards
 from .tables import render_quota_table, render_top_conversations_table
@@ -47,7 +48,7 @@ def run_live_dashboard(
                 report, quota, active_acc = fetch_data_callback()
                 view = build_dashboard_view(report, quota, active_acc)
                 footer = Panel(
-                    f"[dim]Auto-refreshing every {refresh_interval}s | Press Ctrl+C to exit | Betteragy[/dim]",
+                    f"[dim]Auto-refreshing every {refresh_interval}s | Press Ctrl+C to exit | Betteragy v{__version__}[/dim]",
                     box=DEFAULT_BOX,
                     style="dim",
                 )

@@ -46,3 +46,9 @@ Betteragy is a high-performance Rich Terminal CLI and TUI switchboard and token 
 ### 4. Rich Terminal UI / TUI Live Dashboard (`betteragy.ui.*`)
 - Built with Python `rich` with rounded borders, threshold-colored progress bars, and hero KPI panels.
 - Live dashboard loop (`betteragy dashboard` or `betteragy quota --watch`).
+
+### 5. Deep Thinking Harness & Native To-Do MCP Engine (`betteragy.harness.*`, `betteragy.mcp.*`)
+- **System Prompt & Verification Harness**: Injects strict chain-of-thought, falsification tests, and verification gates directly into `~/.gemini/config/rules/betteragy-harness.md`.
+- **Built-in To-Do MCP Server**: Zero-dependency stdio JSON-RPC 2.0 server registered in `~/.gemini/settings.json`, providing `todo_init`, `todo_add`, `todo_update`, and `todo_list` tools backed by SQLite WAL (`~/.config/betteragy/tasks.db`).
+- **Interactive ASCII Task Visualizer & Agent Launcher**: Real-time progress board (`betteragy tasks --watch` and `betteragy agent`) rendering atomic tasks as `[ ]`, `[>]`, `[ok]`, `[x]`.
+

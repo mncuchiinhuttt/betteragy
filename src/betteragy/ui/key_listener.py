@@ -73,6 +73,10 @@ class KeyListener:
             return KEY_UP
         if ch in (b"j", b"J"):
             return KEY_DOWN
+        if ch in (b"h", b"H"):
+            return KEY_LEFT
+        if ch in (b"l", b"L"):
+            return KEY_RIGHT
         if ch in (b"r", b"R"):
             return KEY_REFRESH
         if ch in (b"b", b"B", b"\x08"):
@@ -139,6 +143,10 @@ class KeyListener:
             return KEY_UP
         if char in ("j", "J"):
             return KEY_DOWN
+        if char in ("h", "H"):
+            return KEY_LEFT
+        if char in ("l", "L"):
+            return KEY_RIGHT
         if char in ("r", "R"):
             return KEY_REFRESH
         if char in ("b", "B", "\x7f", "\x08"):

@@ -151,3 +151,28 @@ def test_save_oauth_account():
     assert rec is not None
     assert rec.email == "test@example.com"
     mock_acc_svc.add_or_update_account.assert_called_once()
+
+
+def test_tasks_and_session_selector_navigation(tmp_path):
+    """Verify navigating between tasks, session_selector, and switching sessions."""
+    from betteragy.mcp.task_db import TaskDB
+    tui = InteractiveTUI()
+    tui.task_db = TaskDB(tmp_path / "test_tasks.db")
+    s1 = tui.task_db.init_session("Goal 1", "proj1")
+    s2 = tui.task_db.init_session("Goal 2", "proj2")
+
+    tui.current_screen = "tasks"
+    # Pressing 's' switches to session_selector
+    tui._handle_tasks_key("s")
+    assert tui.current_screen == "session_selector"
+
+    # Navigate and select session 1
+    tui._handle_session_selector_key(KEY_DOWN)
+    tui._handle_session_selector_key(KEY_ENTER)
+    assert tui.current_screen == "tasks"
+    assert "Active session switched" in tui.status_message
+
+    # Pressing ESC from tasks returns to main
+    tui._handle_tasks_key(KEY_ESC)
+    assert tui.current_screen == "main"
+

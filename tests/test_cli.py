@@ -1,6 +1,7 @@
 """Integration tests for Typer CLI commands."""
 
 from typer.testing import CliRunner
+from betteragy import __version__
 from betteragy.cli import app
 
 runner = CliRunner()
@@ -41,3 +42,15 @@ def test_cli_shell():
     assert res.exit_code == 0
     assert "agy()" in res.stdout
     assert "agycool()" in res.stdout
+
+
+def test_cli_version_flag():
+    res = runner.invoke(app, ["--version"])
+    assert res.exit_code == 0
+    assert f"betteragy version {__version__}" in res.stdout
+
+
+def test_cli_version_command():
+    res = runner.invoke(app, ["version"])
+    assert res.exit_code == 0
+    assert f"betteragy version {__version__}" in res.stdout
