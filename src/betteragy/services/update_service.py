@@ -4,7 +4,7 @@ import json
 import re
 import time
 import urllib.request
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Tuple
@@ -115,10 +115,11 @@ class UpdateService:
             except Exception:
                 pass
 
-        if not latest_ver:
+        if latest_ver:
+            self._write_cache(latest_ver, release_url)
+        else:
             latest_ver = __version__
 
-        self._write_cache(latest_ver, release_url)
         is_newer = parse_semver(latest_ver) > parse_semver(__version__)
 
         return UpdateInfo(
