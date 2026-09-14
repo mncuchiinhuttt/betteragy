@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Arrow key navigation (`↑`/`↓` or `k`/`j`), `Enter` to select, `Esc`/`b` to go back, `q` to exit.
   - Alternate terminal screen buffer (`\033[?1049h`) with clean terminal state restoration on exit.
   - Interactive account selector, live quota view with manual refresh (`r`), usage KPIs, and rotate/cooldown triggers.
+
+### Fixed
+- **TUI Arrow Key Escape Sequence Parsing**:
+  - Replaced `sys.stdin.read(1)` with unbuffered `os.read(self.fd, 32)` in `key_listener.py` to prevent Python's `TextIOWrapper` from buffering subsequent escape sequence bytes (`[` and `B`), which previously caused `select()` to time out and mistakenly trigger `KEY_ESC`.
+  - Added support for both CSI (`\x1b[`) and SS3 (`\x1bO`) terminal sequences as well as Page Up/Down keys.
+  - Updated `interactive_tui.py` so pressing `ESC` on the main menu clears temporary status messages rather than terminating the app, reserving `q` or the explicit "Exit" menu item for intentional exit.
+
 - **Account Switchboard**:
   - Direct keyring credential injection (`go-keyring-base64` envelope) for `agy` CLI on macOS Keychain and Linux Secret Service.
   - Proactive OAuth token refresh to prevent 401 unauthenticated errors.
