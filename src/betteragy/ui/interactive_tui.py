@@ -131,8 +131,7 @@ class InteractiveTUI:
 
         scr_chg = self.current_screen != self._last_scr
         self._last_scr = self.current_screen
-        clean = "\n".join(f"{line}\033[K" for line in frame.splitlines())
-        sys.stdout.write(f"\033[?2025h{'\033[2J' if scr_chg else ''}\033[H{clean}\033[J\033[?2025l")
+        sys.stdout.write(f"\033[?2025h{'\033[2J' if scr_chg else ''}\033[H{frame}\033[J\033[?2025l")
         sys.stdout.flush()
     def _fetch_active_quota(self, email: str):
         """Fetch quota and trigger celebration if any model quota reset from exhaustion."""
