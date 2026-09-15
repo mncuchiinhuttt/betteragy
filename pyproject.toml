@@ -7,6 +7,10 @@ name = "betteragy"
 version = "1.2.0"
 description = "Rich CLI & TUI Switchboard & Token Analytics for Antigravity"
 readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Vo Minh Long", email = "vominhlongbentre@gmail.com" }
+]
 requires-python = ">=3.11"
 dependencies = [
     "typer>=0.12.0",
