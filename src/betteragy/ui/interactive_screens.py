@@ -45,7 +45,8 @@ def render_main_menu_panel(
     header.append(f" v{__version__}", style=th.subtitle_style)
     if update_ver:
         header.append(f" [update: v{update_ver}]", style=f"bold {th.quota_high}")
-    header.append(" -- Command Center\n", style="bold white")
+    header.append(" -- Command Center", style="bold white")
+    header.append("  by @mncuchiinhuttt aka. Long Minh Vo\n", style=th.dim_style)
 
     menu_table = Table(box=None, show_header=False, pad_edge=False, padding=(0, 1))
     menu_table.add_column("Cursor", width=3, justify="center")
@@ -165,4 +166,9 @@ def render_footer_hints(screen_name: str = "main") -> Panel:
     else:
         hints = f"[{th.primary}]Esc/b[/{th.primary}] Back to Menu  |  [{th.quota_low}]q[/{th.quota_low}] Exit"
 
-    return Panel(Align.center(Text.from_markup(hints)), box=DEFAULT_BOX, style=th.dim_style)
+    return Panel(
+        Align.center(Text.from_markup(hints)),
+        box=DEFAULT_BOX,
+        style=th.dim_style,
+        subtitle="[dim]by @mncuchiinhuttt aka. Long Minh Vo[/dim]",
+    )

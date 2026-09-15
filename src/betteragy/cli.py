@@ -31,7 +31,10 @@ app = typer.Typer(
 def version_callback(value: bool) -> None:
     """Print version and exit eagerly."""
     if value:
-        console.print(f"[bold cyan]betteragy[/bold cyan] version [bold green]{__version__}[/bold green]")
+        console.print(
+            f"[bold cyan]betteragy[/bold cyan] version [bold green]{__version__}[/bold green] "
+            f"[dim]by[/dim] [bold cyan]@mncuchiinhuttt[/bold cyan] [dim](Long Minh Vo)[/dim]"
+        )
         raise typer.Exit()
 
 # Register command groups
@@ -99,7 +102,10 @@ def main_callback(
 @app.command("version")
 def version_command():
     """Display version and build information."""
-    console.print(f"[bold cyan]betteragy[/bold cyan] version [bold green]{__version__}[/bold green]")
+    console.print(
+        f"[bold cyan]betteragy[/bold cyan] version [bold green]{__version__}[/bold green] "
+        f"[dim]by[/dim] [bold cyan]@mncuchiinhuttt[/bold cyan] [dim](Long Minh Vo)[/dim]"
+    )
 
 
 @app.command("update")

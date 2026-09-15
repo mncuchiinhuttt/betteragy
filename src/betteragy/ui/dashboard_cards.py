@@ -32,6 +32,7 @@ def render_active_overview_card(
     p_badge = Text(f"[ok] Active (45124)", style=f"bold {th.quota_high}") if proxy_active else Text("[ ] Offline", style=th.dim_style)
     t.add_row("Auto-Rotate Proxy", p_badge)
     t.add_row("Color Theme", Text(f"[*] {theme_name.capitalize()}", style=th.primary))
+    t.add_row("Author", Text("@mncuchiinhuttt aka. Long Minh Vo", style=th.secondary))
 
     if update_ver:
         t.add_row("Update Notice", Text(f"[!] New v{update_ver} available", style=f"bold {th.quota_mid}"))
