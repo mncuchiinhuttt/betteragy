@@ -32,21 +32,17 @@ class ProxyInterceptor:
         upstream_host: str,
         upstream_port: int,
         client_writer: asyncio.StreamWriter,
-    ) -> None:
-        """Forward request to upstream with token swapping and auto-rotation on 429."""
-        max_retries = 3
-        attempt = 0
+    ) -> bool:
+        """Forward request to upstream with token swapping. Returns True if client conn should close."""
+        max_retries, attempt = 3, 0
+        client_wants_close = headers.get("connection", "").strip().lower() == "close"
+        headers_sent = False
 
-        # Strip hop-by-hop headers; compute Content-Length since body is buffered
         cleaned_headers = {
             k: v for k, v in headers.items()
             if k.lower() not in (
-                "connection",
-                "keep-alive",
-                "proxy-authenticate",
-                "proxy-authorization",
-                "transfer-encoding",
-                "content-length",
+                "connection", "keep-alive", "proxy-authenticate",
+                "proxy-authorization", "transfer-encoding", "content-length", "expect",
             )
         }
         cleaned_headers["Host"] = upstream_host
@@ -65,33 +61,33 @@ class ProxyInterceptor:
                 except Exception as e:
                     logger.warning("[Proxy] [!] Failed to refresh token for %s: %s", active_acc.email, e)
 
-            upstream_reader = None
-            upstream_writer = None
+            upstream_reader, upstream_writer = None, None
             try:
                 upstream_reader, upstream_writer = await asyncio.wait_for(
-                    asyncio.open_connection(upstream_host, upstream_port, ssl=True),
-                    timeout=10.0,
+                    asyncio.open_connection(upstream_host, upstream_port, ssl=True), timeout=10.0,
                 )
-
-                # Send request
                 req_line = f"{method} {path} HTTP/1.1\r\n"
                 headers_data = "".join(f"{k}: {v}\r\n" for k, v in cleaned_headers.items())
                 upstream_writer.write((req_line + headers_data + "\r\n").encode("utf-8") + body)
                 await upstream_writer.drain()
 
-                # Read response status line
-                status_line = await upstream_reader.readline()
-                if not status_line:
-                    raise IOError("Empty response from upstream")
+                # Read status line, skipping informational 100 Continue
+                status_code, status_line = 500, b""
+                while True:
+                    status_line = await upstream_reader.readline()
+                    if not status_line:
+                        raise IOError("Empty response from upstream")
+                    match = re.match(r"^HTTP/\d\.\d\s+(\d+)", status_line.decode("utf-8", errors="replace"))
+                    status_code = int(match.group(1)) if match else 500
+                    if status_code == 100:
+                        while True:
+                            info_l = await upstream_reader.readline()
+                            if not info_l or info_l == b"\r\n":
+                                break
+                        continue
+                    break
 
-                match = re.match(r"^HTTP/\d\.\d\s+(\d+)", status_line.decode("utf-8", errors="replace"))
-                status_code = int(match.group(1)) if match else 500
-
-                # Read response headers
-                resp_headers_lines = []
-                content_length = None
-                is_chunked = False
-
+                resp_headers_lines, content_length, is_chunked = [], None, False
                 while True:
                     line = await upstream_reader.readline()
                     if not line or line == b"\r\n":
@@ -103,7 +99,7 @@ class ProxyInterceptor:
                     elif lower_line.startswith(b"transfer-encoding:") and b"chunked" in lower_line:
                         is_chunked = True
 
-                # Check for 429 Quota Exceeded (RESOURCE_EXHAUSTED)
+                # Check for 429 Quota Exceeded
                 if status_code == 429 and active_acc:
                     error_payload = b""
                     if content_length is not None:
@@ -111,10 +107,7 @@ class ProxyInterceptor:
                     elif is_chunked:
                         error_payload = await read_chunked_payload(upstream_reader)
 
-                    logger.warning(
-                        "[Proxy] [!] 429 Quota Exceeded on %s. Auto-rotating to next account...",
-                        active_acc.email,
-                    )
+                    logger.warning("[Proxy] [!] 429 Quota Exceeded on %s. Auto-rotating...", active_acc.email)
                     upstream_writer.close()
                     await upstream_writer.wait_closed()
 
@@ -123,14 +116,24 @@ class ProxyInterceptor:
                         logger.error("[Proxy] [x] All accounts exhausted: %s", rot_msg)
                         client_writer.write(status_line + b"".join(resp_headers_lines) + b"\r\n" + error_payload)
                         await client_writer.drain()
-                        return
+                        return True
                     continue
 
-                # Stream response headers and body directly back to client
-                client_writer.write(status_line + b"".join(resp_headers_lines) + b"\r\n")
-                await client_writer.drain()
+                # Strip hop-by-hop headers from upstream and preserve client keep-alive
+                out_headers = [
+                    h for h in resp_headers_lines
+                    if not h.lower().startswith((b"connection:", b"keep-alive:"))
+                ]
+                if client_wants_close:
+                    out_headers.append(b"Connection: close\r\n")
+                else:
+                    out_headers.append(b"Connection: keep-alive\r\nKeep-Alive: timeout=60\r\n")
 
-                # Stream body based on HTTP framing to prevent hanging
+                client_writer.write(status_line + b"".join(out_headers) + b"\r\n")
+                await client_writer.drain()
+                headers_sent = True
+
+                # Stream body based on HTTP framing
                 if status_code in (204, 304) or (100 <= status_code < 200):
                     pass
                 elif is_chunked:
@@ -145,20 +148,26 @@ class ProxyInterceptor:
                         client_writer.write(chunk)
                         await client_writer.drain()
 
-                return
+                return client_wants_close
 
+            except (ConnectionResetError, BrokenPipeError, asyncio.CancelledError):
+                return True
             except Exception as e:
                 logger.error("[Proxy] [x] Upstream request error (attempt %d): %s", attempt, e)
-                if attempt >= max_retries:
+                if attempt >= max_retries and not headers_sent:
                     err_body = f'{{"error": {{"code": 502, "message": "Betteragy proxy upstream error: {e}"}}}}'
                     resp = (
                         f"HTTP/1.1 502 Bad Gateway\r\n"
                         f"Content-Type: application/json\r\n"
                         f"Content-Length: {len(err_body)}\r\n\r\n{err_body}"
                     )
-                    client_writer.write(resp.encode("utf-8"))
-                    await client_writer.drain()
-                    return
+                    try:
+                        client_writer.write(resp.encode("utf-8"))
+                        await client_writer.drain()
+                    except Exception:
+                        pass
+                    return True
             finally:
                 if upstream_writer and not upstream_writer.is_closing():
                     upstream_writer.close()
+        return True
