@@ -8,3 +8,5 @@ build/
 .coverage
 .DS_Store
 *.db
+docs/
+plans/
