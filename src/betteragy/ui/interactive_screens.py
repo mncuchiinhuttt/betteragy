@@ -20,6 +20,7 @@ MAIN_MENU_ITEMS = [
     ("[-] Remove Account", "Delete an account from your local switchboard pool"),
     ("[*] Tasks & Planning", "View active agy task board and verification progress"),
     ("[^] Thinking Harness", "View deep reasoning harness rules and status"),
+    ("[*] Zero-Restart Proxy", "Toggle and inspect local proxy with 429 auto-rotation"),
     ("[>] Shell Integration", "View bash/zsh wrapper function and aliases for agy"),
     ("[?] Check for Updates", "Check GitHub releases for latest updates"),
     ("[x] Exit", "Exit Betteragy and return to shell"),
@@ -32,7 +33,12 @@ ADD_ACCOUNT_METHODS = [
 ]
 
 
-def render_main_menu_panel(selected_idx: int, active_email: str, update_ver: str | None = None) -> Panel:
+def render_main_menu_panel(
+    selected_idx: int,
+    active_email: str,
+    update_ver: str | None = None,
+    proxy_active: bool = False,
+) -> Panel:
     """Render the main interactive menu with cursor selection."""
     header = Text()
     header.append("Betteragy", style="bold cyan")
@@ -41,7 +47,12 @@ def render_main_menu_panel(selected_idx: int, active_email: str, update_ver: str
         header.append(f" [update: v{update_ver}]", style="bold green")
     header.append(" -- Interactive Switchboard & Token Analytics\n", style="bold white")
     header.append("Active Account: ", style="dim")
-    header.append(f"{active_email or 'None'}\n", style="bold green")
+    header.append(f"{active_email or 'None'}", style="bold green")
+    if proxy_active:
+        header.append("  |  Proxy: ", style="dim")
+        header.append("[ok] Active (45124)\n", style="bold cyan")
+    else:
+        header.append("\n")
 
     menu_table = Table(box=None, show_header=False, pad_edge=False, padding=(0, 1))
     menu_table.add_column("Cursor", width=3, justify="center")
@@ -150,6 +161,8 @@ def render_footer_hints(screen_name: str = "main") -> Panel:
         hints = "[bold cyan]Esc/b[/bold cyan] Menu  |  [bold cyan]Left/Right[/bold cyan] Switch Tab  |  [bold green]Enter[/bold green] Set Active  |  [bold yellow]r[/bold yellow] Refresh  |  [bold red]q[/bold red] Exit"
     elif screen_name == "session_selector":
         hints = "[bold cyan]Up/Down[/bold cyan] Navigate  |  [bold green]Enter[/bold green] Switch  |  [bold red]Esc/b[/bold red] Back"
+    elif screen_name == "proxy":
+        hints = "[bold cyan]p[/bold cyan] Toggle Proxy  |  [bold yellow]r[/bold yellow] Refresh  |  [bold red]Esc/b[/bold red] Back  |  [bold red]q[/bold red] Exit"
     else:
         hints = "[bold cyan]Esc/b[/bold cyan] Back to Menu  |  [bold red]q[/bold red] Exit"
 

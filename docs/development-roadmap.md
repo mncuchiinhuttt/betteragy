@@ -24,13 +24,22 @@
 - [x] GitHub Releases/Tags update checker service with local caching and CLI/TUI integration.
 
 
-## Phase 3: IDE Realtime Integration (Planned - v0.3.0)
+## Phase 3: Transparent Local Proxy & Zero-Restart Auto-Rotation (Completed - v1.2.0)
+- [x] Local Root CA & SSL Certificate Generator (`cert_service.py`) with SubjectAltName for `*.googleapis.com`.
+- [x] Asyncio TCP/TLS MITM Proxy Server (`proxy/server.py`) handling HTTP `CONNECT` tunnels and TLS termination.
+- [x] Dynamic Token Swapper & 429 Interceptor (`proxy/interceptor.py`): swaps Bearer tokens on the fly and auto-rotates + retries on HTTP 429 quota exhaustion.
+- [x] Background Daemon Process Control (`proxy/daemon.py`, `commands/proxy_cmd.py`).
+- [x] Zero-Restart Shell & Agent Integration (`shell_cmd.py`, `agent_cmd.py` exporting `HTTPS_PROXY` and `SSL_CERT_FILE`).
+- [x] Interactive TUI Proxy Screen & Live Badge (`proxy_flows.py`, `interactive_renderer.py`, `interactive_tui.py`).
+
+## Phase 4: IDE Realtime Integration (Planned - v0.3.0 / v1.3.0)
 - [ ] Direct Language Server process detector via process argv scanning (`--https_server_port`, `--csrf_token`).
 - [ ] Programmatic `RegisterGdmUser` trigger when Antigravity IDE is open for zero-reload IDE switching.
 - [ ] Context window token breakdown (MCP tools, system prompts, skills, workflows).
 
-## Phase 4: Team & Extended Telemetry (Planned - v0.4.0)
+## Phase 5: Team & Extended Telemetry (Planned - v0.4.0)
 - [ ] Multi-user / team shared pool synchronization.
 - [ ] Export reports to Markdown, CSV, and HTML.
 - [ ] Notification hooks (macOS notifications / desktop alerts when quota resets or reaches 0%).
+
 

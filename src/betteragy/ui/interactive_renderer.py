@@ -28,7 +28,11 @@ def build_screen_elements(tui) -> list:
 
     if tui.current_screen == "main":
         update_ver = getattr(tui, "update_ver", None)
-        elements.extend([render_main_menu_panel(tui.menu_idx, active_email, update_ver=update_ver), render_footer_hints("main")])
+        proxy_active = getattr(tui, "_is_proxy_active", lambda: False)()
+        elements.extend([
+            render_main_menu_panel(tui.menu_idx, active_email, update_ver=update_ver, proxy_active=proxy_active),
+            render_footer_hints("main"),
+        ])
     elif tui.current_screen == "switch_account":
         elements.extend([render_account_selector_panel(accounts, tui.account_idx, active_email), render_footer_hints("sub")])
     elif tui.current_screen == "remove_account":
@@ -78,6 +82,9 @@ def build_screen_elements(tui) -> list:
                 "[dim]To install and activate in agy, run:[/] [cyan]betteragy harness install[/cyan]"
             )
         elements.extend([Panel(body, title="[~] Betteragy Reasoning Harness", box=DEFAULT_BOX), render_footer_hints("sub")])
+    elif tui.current_screen == "proxy":
+        from .proxy_flows import render_proxy_panel
+        elements.extend([render_proxy_panel(tui), render_footer_hints("proxy")])
 
     return elements
 

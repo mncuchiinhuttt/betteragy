@@ -52,3 +52,10 @@ Betteragy is a high-performance Rich Terminal CLI and TUI switchboard and token 
 - **Built-in To-Do MCP Server**: Zero-dependency stdio JSON-RPC 2.0 server registered in `~/.gemini/settings.json`, providing `todo_init`, `todo_add`, `todo_update`, and `todo_list` tools backed by SQLite WAL (`~/.config/betteragy/tasks.db`).
 - **Interactive ASCII Task Visualizer & Agent Launcher**: Real-time progress board (`betteragy tasks --watch` and `betteragy agent`) rendering atomic tasks as `[ ]`, `[>]`, `[ok]`, `[x]`.
 
+### 6. Transparent Local Proxy & Zero-Restart Auto-Rotation (`betteragy.proxy.*`, `cert_service`)
+- **Root CA & Dynamic TLS Termination**: Local 2048-bit Root CA and wildcard SAN certificates for `*.googleapis.com` stored in `~/.config/betteragy/certs/`.
+- **Asyncio HTTP CONNECT Tunneling**: Intercepts `agy` HTTPS traffic on `127.0.0.1:45124` without requiring `agy` restarts when switching accounts.
+- **Dynamic Token Injection**: Replaces `Authorization: Bearer <token>` in flight with the current active account's valid token.
+- **Transparent 429 Quota Auto-Rotation**: Catches upstream HTTP 429 quota exhaustion before streaming to `agy`, places exhausted account on 4h cooldown, rotates to next healthy account, and automatically replays request.
+
+

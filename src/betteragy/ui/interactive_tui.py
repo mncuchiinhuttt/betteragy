@@ -5,6 +5,7 @@ import time
 from rich.console import Console, Group
 
 from ..mcp.task_db import TaskDB
+from ..proxy.daemon import is_proxy_running
 from ..services.account_service import AccountService
 from ..services.quota_aggregator import QuotaAggregator
 from ..services.quota_service import QuotaService
@@ -15,6 +16,7 @@ from .account_flows import OAuthWorker, finish_oauth, handle_account_list_key, h
 from .interactive_renderer import build_screen_elements
 from .interactive_screens import MAIN_MENU_ITEMS
 from .key_listener import KEY_BACK, KEY_DOWN, KEY_ENTER, KEY_ESC, KEY_QUIT, KEY_REFRESH, KEY_UP, KeyListener
+from .proxy_flows import handle_proxy_key
 from .session_flows import handle_session_selector_key, handle_tasks_key
 from .theme import BETTERAGY_THEME
 
@@ -32,21 +34,17 @@ class InteractiveTUI:
         self.oauth_worker = OAuthWorker()
         self.task_db = TaskDB()
         self.update_svc = UpdateService()
-        self.update_ver = None
         info = self.update_svc.check_for_updates(force=False)
-        if info and info.is_newer:
-            self.update_ver = info.latest_version
-
+        self.update_ver = info.latest_version if (info and info.is_newer) else None
         self.current_screen = "main"
-        self.menu_idx = 0
-        self.account_idx = 0
-        self.add_idx = 0
-        self.session_idx = 0
-        self.session_tab_idx = 0
+        self.menu_idx = self.account_idx = self.add_idx = self.session_idx = self.session_tab_idx = 0
         self.selected_session_id = None
         self.status_message = ""
-        self.cached_quota = None
-        self.cached_report = None
+        self.cached_quota = self.cached_report = None
+
+    def _is_proxy_active(self) -> bool:
+        """Check whether local proxy daemon is running and healthy."""
+        return is_proxy_running()
 
     def run(self) -> None:
         """Run the interactive alternate-screen navigation loop."""
@@ -87,6 +85,9 @@ class InteractiveTUI:
                             break
                     elif self.current_screen == "session_selector":
                         if handle_session_selector_key(self, key):
+                            break
+                    elif self.current_screen == "proxy":
+                        if handle_proxy_key(self, key):
                             break
                     elif self.current_screen in ("quota", "usage", "shell", "harness"):
                         if key == KEY_QUIT:
@@ -151,13 +152,15 @@ class InteractiveTUI:
             self.current_screen = "tasks"
         elif "Harness" in action:
             self.current_screen = "harness"
+        elif "Proxy" in action:
+            self.current_screen = "proxy"
         elif "Shell Integration" in action:
             self.current_screen = "shell"
         elif "Updates" in action:
             info = self.update_svc.check_for_updates(force=True)
             if info and info.is_newer:
                 self.update_ver = info.latest_version
-                self.status_message = f"[bold yellow][!] Update available: v{info.latest_version}[/bold yellow] (Run: betteragy update)"
+                self.status_message = f"[bold yellow][!] Update available: v{info.latest_version}[/bold yellow]"
             elif info:
                 self.status_message = f"[bold green][ok] Betteragy is up to date (v{info.current_version})[/bold green]"
             else:
@@ -178,9 +181,11 @@ class InteractiveTUI:
     def _handle_session_selector_key(self, key: str) -> bool:
         return handle_session_selector_key(self, key)
 
+    def _handle_proxy_key(self, key: str) -> bool:
+        return handle_proxy_key(self, key)
+
 
 def run_interactive_tui():
     """Launch the interactive TUI application."""
     app = InteractiveTUI()
     app.run()
-

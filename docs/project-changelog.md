@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-09-15
+
+### Added
+- **Transparent Local MITM Proxy & Zero-Restart Account Switching**:
+  - **Local Root CA & Server Certificate Generator (`cert_service.py`)**: Automatically creates and manages 2048-bit RSA Root CA (`ca.crt`, `ca.key`) and server certificate (`server.crt`, `server.key`) with SAN for `*.googleapis.com`, `cloudcode-pa.googleapis.com`, `daily-cloudcode-pa.googleapis.com`, and `127.0.0.1`.
+  - **Asynchronous Proxy Server (`proxy/server.py`)**: Asyncio TCP server supporting HTTP `CONNECT` tunneling, TLS MITM interception for Google Cloud Code Assist domains, raw bidirectional TCP tunneling for third-party traffic, and `/health` probe endpoints.
+  - **Dynamic Token Interceptor & Auto-Rotation (`proxy/interceptor.py`)**: Intercepts decrypted HTTP streams from `agy`, dynamically injects valid Bearer tokens from Betteragy's active account (`ensure_valid_access_token()`), intercepts HTTP 429 quota exhaustion errors, puts the exhausted account on a 4-hour cooldown, triggers automatic rotation (`RotationService.rotate()`), and transparently retries upstream with the new account's token so `agy` never encounters rate limits or errors.
+  - **Daemon Process Control (`proxy/daemon.py`, `commands/proxy_cmd.py`)**: Background process manager supporting `betteragy proxy start`, `stop`, `status`, and `run` with PID tracking, health probing, and logging.
+  - **Shell & Agent Wrapper Integration (`shell_cmd.py`, `agent_cmd.py`)**: Updated `agy()` shell function and `betteragy agent` launcher to export `HTTPS_PROXY=http://127.0.0.1:45124` and `SSL_CERT_FILE=~/.config/betteragy/certs/ca.crt` automatically when proxy is running.
+  - **Interactive TUI Proxy Screen & Live Badge (`proxy_flows.py`, `interactive_renderer.py`, `interactive_tui.py`)**: Added `[*] Zero-Restart Proxy` menu item, active proxy status badge in the header (`[ok] Active (45124)`), and dedicated control panel to toggle proxy daemon with `p`.
+  - **Comprehensive Unit & Integration Test Suite (`test_cert_service.py`, `test_proxy.py`, `test_proxy_tui.py`)**: Added full automated test coverage for CA generation, health probing, token swapping, 429 auto-rotation retries, and TUI proxy interactions (68/68 tests passing).
+
 ## [1.1.0] - 2026-09-14
 
 ### Added

@@ -14,13 +14,23 @@ agent_app = typer.Typer(help="Launch agy with maximum reasoning effort and setup
 console = Console()
 
 
+def _get_agent_env() -> dict:
+    env = os.environ.copy()
+    pid_file = Path.home() / ".config" / "betteragy" / "proxy.pid"
+    ca_file = Path.home() / ".config" / "betteragy" / "certs" / "ca.crt"
+    if pid_file.exists() and ca_file.exists():
+        env["HTTPS_PROXY"] = "http://127.0.0.1:45124"
+        env["SSL_CERT_FILE"] = str(ca_file)
+    return env
+
+
 @agent_app.callback(invoke_without_command=True)
 def default_agent(ctx: typer.Context) -> None:
     """Launch agy with maximum reasoning effort (--effort high)."""
     if ctx.invoked_subcommand is None:
         cmd = ["agy", "--effort", "high"]
         try:
-            subprocess.run(cmd)
+            subprocess.run(cmd, env=_get_agent_env())
         except FileNotFoundError:
             console.print("[bold red][!] 'agy' binary not found in PATH.[/]")
 
@@ -39,7 +49,7 @@ def run_agent(
         cmd.extend(["-p", prompt])
 
     try:
-        subprocess.run(cmd)
+        subprocess.run(cmd, env=_get_agent_env())
     except FileNotFoundError:
         console.print("[bold red][!] 'agy' binary not found in PATH.[/]")
 

@@ -11,10 +11,14 @@ console = Console(theme=BETTERAGY_THEME)
 SHELL_SNIPPET = """# Betteragy Shell Integration for Antigravity
 # Add the following lines to your ~/.zshrc or ~/.bashrc:
 
-# Wrapper to auto-rotate healthy account or run agy seamlessly
+# Wrapper to run agy seamlessly with zero-restart auto-rotation proxy
 agy() {
-    betteragy account rotate > /dev/null 2>&1
-    command agy "$@"
+    if [ -f "$HOME/.config/betteragy/proxy.pid" ]; then
+        HTTPS_PROXY="http://127.0.0.1:45124" SSL_CERT_FILE="$HOME/.config/betteragy/certs/ca.crt" command agy "$@"
+    else
+        betteragy account rotate > /dev/null 2>&1
+        command agy "$@"
+    fi
 }
 
 # Quick cooldown command when rate-limit is hit
