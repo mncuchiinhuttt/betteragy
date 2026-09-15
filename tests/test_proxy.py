@@ -7,7 +7,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from betteragy.core.models import AccountRecord
-from betteragy.proxy.daemon import is_healthy, is_proxy_running
+from betteragy.proxy.daemon import (
+    is_healthy,
+    is_port_in_use,
+    is_proxy_running,
+    start_proxy_daemon,
+)
 from betteragy.proxy.interceptor import ProxyInterceptor
 from betteragy.proxy.server import BetteragyProxyServer
 from betteragy.services.cert_service import CertService
@@ -159,3 +164,64 @@ def test_daemon_health_and_status():
     """Verify is_healthy returns False when port is closed."""
     assert is_healthy("127.0.0.1", 59999) is False
     assert is_proxy_running("127.0.0.1", 59999) is False
+    assert is_port_in_use("127.0.0.1", 59999) is False
+
+
+def test_start_proxy_daemon_detects_port_conflict():
+    """Verify start_proxy_daemon fails immediately when port is already occupied."""
+    with patch("betteragy.proxy.daemon.get_proxy_pid", return_value=None), \
+         patch("betteragy.proxy.daemon.is_healthy", return_value=False), \
+         patch("betteragy.proxy.daemon.is_port_in_use", return_value=True), \
+         patch("betteragy.proxy.daemon._find_pid_by_port", return_value=8888):
+        ok, pid, msg = start_proxy_daemon(port=45124)
+        assert ok is False
+        assert pid == 8888
+        assert "already in use" in msg
+
+
+def test_start_proxy_daemon_handles_premature_exit(tmp_path):
+    """Verify start_proxy_daemon catches immediate child crash without hanging."""
+    mock_proc = MagicMock()
+    mock_proc.pid = 99999
+    mock_proc.poll.return_value = 1
+    mock_proc.returncode = 1
+
+    with patch("betteragy.proxy.daemon.get_proxy_pid", return_value=None), \
+         patch("betteragy.proxy.daemon.is_healthy", return_value=False), \
+         patch("betteragy.proxy.daemon.is_port_in_use", return_value=False), \
+         patch("subprocess.Popen", return_value=mock_proc), \
+         patch("betteragy.proxy.daemon.CONFIG_DIR", tmp_path), \
+         patch("betteragy.proxy.daemon.PID_FILE", tmp_path / "proxy.pid"), \
+         patch("betteragy.proxy.daemon.LOG_FILE", tmp_path / "proxy.log"):
+        ok, pid, msg = start_proxy_daemon(port=45124)
+        assert ok is False
+        assert "failed to start" in msg or "exit code 1" in msg
+        assert not (tmp_path / "proxy.pid").exists()
+
+
+def test_start_proxy_daemon_sanitizes_proxy_env(tmp_path):
+    """Verify start_proxy_daemon strips HTTPS_PROXY before launching daemon."""
+    mock_proc = MagicMock()
+    mock_proc.pid = 11111
+    mock_proc.poll.return_value = None
+
+    captured_env = {}
+
+    def fake_popen(cmd, stdout=None, stderr=None, env=None, start_new_session=False):
+        nonlocal captured_env
+        captured_env = env or {}
+        return mock_proc
+
+    with patch.dict("os.environ", {"HTTPS_PROXY": "http://127.0.0.1:45124", "HTTP_PROXY": "http://bad:8080"}), \
+         patch("betteragy.proxy.daemon.get_proxy_pid", return_value=None), \
+         patch("betteragy.proxy.daemon.is_healthy", side_effect=[False, True]), \
+         patch("betteragy.proxy.daemon.is_port_in_use", return_value=False), \
+         patch("subprocess.Popen", side_effect=fake_popen), \
+         patch("betteragy.proxy.auto_config.install_auto_config"), \
+         patch("betteragy.proxy.daemon.CONFIG_DIR", tmp_path), \
+         patch("betteragy.proxy.daemon.PID_FILE", tmp_path / "proxy.pid"), \
+         patch("betteragy.proxy.daemon.LOG_FILE", tmp_path / "proxy.log"):
+        ok, pid, msg = start_proxy_daemon(port=45124)
+        assert ok is True
+        assert "HTTPS_PROXY" not in captured_env
+        assert "HTTP_PROXY" not in captured_env
