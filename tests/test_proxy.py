@@ -153,7 +153,7 @@ async def test_interceptor_auto_rotation_on_429():
             client_writer=mock_client_writer,
         )
 
-    mock_rot_svc.set_cooldown.assert_called_once_with(hours=4.0)
+    mock_rot_svc.set_cooldown.assert_called_once_with(hours=4.0, model_id=None)
 
     written_to_client = b"".join(call[0][0] for call in mock_client_writer.write.call_args_list)
     assert b"HTTP/1.1 200 OK" in written_to_client

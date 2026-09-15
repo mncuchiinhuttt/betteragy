@@ -107,14 +107,31 @@ class ProxyInterceptor:
                     elif is_chunked:
                         error_payload = await read_chunked_payload(upstream_reader)
 
-                    logger.warning("[Proxy] [!] 429 Quota Exceeded on %s. Auto-rotating...", active_acc.email)
+                    model_id = None
+                    if body:
+                        try:
+                            import json
+                            b_json = json.loads(body.decode("utf-8", errors="ignore"))
+                            model_id = b_json.get("model") or b_json.get("modelId")
+                        except Exception:
+                            pass
+
+                    m_log = f" (model: {model_id})" if model_id else ""
+                    logger.warning("[Proxy] [!] 429 Quota Exceeded on %s%s. Auto-rotating...", active_acc.email, m_log)
                     upstream_writer.close()
                     await upstream_writer.wait_closed()
 
-                    ok, rot_msg = await asyncio.to_thread(self.rotation_service.set_cooldown, hours=4.0)
+                    ok, rot_msg = await asyncio.to_thread(self.rotation_service.set_cooldown, hours=4.0, model_id=model_id)
                     if not ok:
-                        logger.error("[Proxy] [x] All accounts exhausted: %s", rot_msg)
-                        client_writer.write(status_line + b"".join(resp_headers_lines) + b"\r\n" + error_payload)
+                        logger.error("[Proxy] [x] Rotation failed: %s", rot_msg)
+                        msg_text = (
+                            f"[Betteragy Quota Advisory] {rot_msg}\n\n"
+                            f"All accounts in rotation pool are currently exhausted for this model.\n"
+                            f"Would you like to wait for quota reset or add another account via 'betteragy account add'?"
+                        )
+                        err_bytes = json.dumps({"error": {"code": 429, "status": "RESOURCE_EXHAUSTED", "message": msg_text}}).encode("utf-8")
+                        resp = f"HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\nContent-Length: {len(err_bytes)}\r\n\r\n".encode("utf-8") + err_bytes
+                        client_writer.write(resp)
                         await client_writer.drain()
                         return True
                     continue

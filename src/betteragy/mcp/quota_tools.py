@@ -70,11 +70,15 @@ def format_quota_report(quota: Any, use_color: bool = False) -> str:
         mname = getattr(b, "display_name", "") or getattr(b, "model_id", "Unknown")
         lines.append(f"  {tag} {W}{mname:<30}{RST} {pct_color}{pct:>3}%{RST} {reset_info}")
         if pct < 20:
-            low_quota_models.append(mname)
+            low_quota_models.append((mname, pct, b.reset_countdown or "soon"))
 
     if low_quota_models:
-        lines.append(f"\n  {R}[!] Low Quota Advisory:{RST} Models ({', '.join(low_quota_models)}) < 20%.")
-        lines.append(f"      Use 'account_switch' to rotate to another account with fresh quota.")
+        lines.append(f"\n  {R}[!] Low Quota Advisory & Caution Gate:{RST}")
+        for m, pct, cd in low_quota_models:
+            lines.append(f"      - {m}: {pct}% remaining (resets in {cd})")
+        lines.append(f"  {Y}[*] Agent Decision Matrix:{RST}")
+        lines.append(f"      - Atomic / 1-step task (1 button, typo): proceed directly.")
+        lines.append(f"      - Multi-step feature task: pause and ask user to proceed, switch account, or wait.")
     else:
         lines.append(f"\n  {G}[ok] All model quotas healthy.{RST}")
 

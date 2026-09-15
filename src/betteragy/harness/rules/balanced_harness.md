@@ -29,5 +29,5 @@
     - Inline routine tasks; delegate only for heavy multi-file research, parallel matrices, or dedicated code reviews.
     - Strict file ownership boundaries; zero-polling reactive wakeup (never poll manage_subagents in a loop).
     - Verify subagent findings empirically; clean up completed subagents.
-12. **Quota Intelligence & Rotation**: Inspect model limits with `quota_status`. When quota < 20%, switch accounts with `account_switch` or throttle model tier.
+12. **Quota Intelligence & Pre-Task Caution Gate**: Inspect model limits with `quota_status`. For Tier 1 atomic tweaks (1 button, typo), proceed even if quota is 5-10%. For Tier 2/3 multi-step features, if quota drops to 5-10% (or < 15%), pause and ask user to confirm proceeding, switch account, or wait for reset. When quota < 20% mid-flight, switch accounts with `account_switch` or rely on proxy auto-rotation.
 13. **Long-Running Wake-Up & Checkpoints**: Call `checkpoint_save` to persist progress before long tasks. Arm `schedule` timer/cron to wake up autonomously; suggest `/goal` for overnight runs. Track delegation via `todo_add(assigned_to, depends_on)`.

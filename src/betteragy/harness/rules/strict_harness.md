@@ -141,9 +141,15 @@ Always classify incoming requests into one of three tiers to determine planning 
 
 ## VIII. Quota Intelligence, Long-Running Execution & Checkpoints
 
-1. **Quota Intelligence & Proactive Rotation**:
-   - Before launching intensive coding loops or batch tasks, inspect quota via `quota_status`.
-   - If quota for primary models (Gemini 3.1 Pro, Claude 3.7 Sonnet) drops below 20%, proactively rotate accounts with `account_switch` or adjust model selection.
+1. **Quota Intelligence, Pre-Task Estimation & Caution Gate**:
+   - Before launching intensive coding loops or new tasks, inspect quota via `quota_status`.
+   - **Task Complexity vs. Quota Evaluation**:
+     - **Atomic Tasks (Tier 1)**: Modifying a single button, 1-line syntax tweak, typo, or localized bug: if remaining quota is 5-10%, proceed directly without interrupting the user.
+     - **Feature / Architectural Tasks (Tier 2 & 3)**: Shipping a full feature, multi-step refactoring, or large codebase edits: if remaining quota drops to **5-10% (or < 15%)**, the agent MUST PAUSE and caution the user before starting work.
+     - **Mandatory User Confirmation on Low Quota**:
+       State the current remaining quota %, the active model, and the earliest reset countdown. Prompt:
+       *"Quota Advisory: Model [Model Name] has [X]% remaining quota (resets in [Countdown]). This task appears to be a multi-step feature implementation that may exhaust the remaining quota mid-flight. Would you like to proceed anyway, rotate to another account, or wait for quota reset?"*
+   - If quota drops below 20% during execution, proactively rotate accounts with `account_switch` or rely on Betteragy's transparent proxy auto-rotation.
 2. **Autonomous Long-Running Wake-Up Protocol**:
    - For tasks requiring wait periods (> 5-10 minutes, e.g. remote builds, benchmark runs):
      - **Save Checkpoint**: Call `checkpoint_save(name=..., summary=..., next_steps=...)` to persist state across sessions/days.
