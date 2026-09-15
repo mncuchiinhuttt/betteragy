@@ -37,6 +37,12 @@ SUCCESS_HTML = """<!DOCTYPE html>
 </html>"""
 
 
+def _direct_urlopen(req: urllib.request.Request, timeout: float = HTTP_TIMEOUT_SECONDS):
+    """Open HTTP request bypassing any environment or system proxy."""
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    return opener.open(req, timeout=timeout)
+
+
 def refresh_access_token(refresh_token: str) -> dict:
     """Exchange a refresh token for a fresh access token."""
     payload = urllib.parse.urlencode({
@@ -52,9 +58,8 @@ def refresh_access_token(refresh_token: str) -> dict:
         headers={"Content-Type": "application/x-www-form-urlencoded"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT_SECONDS) as resp:
+    with _direct_urlopen(req, timeout=HTTP_TIMEOUT_SECONDS) as resp:
         return json.loads(resp.read().decode("utf-8"))
-
 
 def fetch_user_info(access_token: str) -> dict:
     """Fetch user profile information (email, name, picture) using access token."""
@@ -63,7 +68,7 @@ def fetch_user_info(access_token: str) -> dict:
         headers={"Authorization": f"Bearer {access_token}"},
         method="GET",
     )
-    with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT_SECONDS) as resp:
+    with _direct_urlopen(req, timeout=HTTP_TIMEOUT_SECONDS) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 
@@ -83,7 +88,7 @@ def exchange_code(code: str, redirect_uri: str) -> dict:
         headers={"Content-Type": "application/x-www-form-urlencoded"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT_SECONDS) as resp:
+    with _direct_urlopen(req, timeout=HTTP_TIMEOUT_SECONDS) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 

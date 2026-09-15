@@ -55,7 +55,7 @@ class ProxyInterceptor:
             active_acc = self.account_service.get_active_account()
             if active_acc:
                 try:
-                    token = self.account_service.ensure_valid_access_token(active_acc)
+                    token = await asyncio.to_thread(self.account_service.ensure_valid_access_token, active_acc)
                     cleaned_headers["Authorization"] = f"Bearer {token}"
                     logger.info("[Proxy] [~] Injected token for active account: %s", active_acc.email)
                 except Exception as e:
@@ -111,7 +111,7 @@ class ProxyInterceptor:
                     upstream_writer.close()
                     await upstream_writer.wait_closed()
 
-                    ok, rot_msg = self.rotation_service.set_cooldown(hours=4.0)
+                    ok, rot_msg = await asyncio.to_thread(self.rotation_service.set_cooldown, hours=4.0)
                     if not ok:
                         logger.error("[Proxy] [x] All accounts exhausted: %s", rot_msg)
                         client_writer.write(status_line + b"".join(resp_headers_lines) + b"\r\n" + error_payload)

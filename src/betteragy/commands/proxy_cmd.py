@@ -31,6 +31,8 @@ def start_proxy(
 ) -> None:
     """Start local proxy daemon for auto-rotation & live account switching."""
     if foreground:
+        for k in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"):
+            os.environ.pop(k, None)
         server = BetteragyProxyServer(host=host, port=port)
         PID_FILE.parent.mkdir(parents=True, exist_ok=True)
         PID_FILE.write_text(str(os.getpid()), encoding="utf-8")
@@ -114,6 +116,8 @@ def run_proxy(
 ) -> None:
     """Internal entrypoint for background daemon."""
     import logging
+    for k in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"):
+        os.environ.pop(k, None)
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",

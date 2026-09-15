@@ -59,7 +59,8 @@ def post_json(endpoint: str, data: dict, access_token: str) -> dict:
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT_SECONDS) as resp:
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    with opener.open(req, timeout=HTTP_TIMEOUT_SECONDS) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 
