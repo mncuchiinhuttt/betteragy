@@ -11,8 +11,11 @@ from betteragy.mcp.task_db import TaskDB
 from .session_panels import render_session_tab_bar, render_sessions_table
 
 
-def render_ascii_task_board(db: TaskDB | None = None, session_id: Optional[int] = None) -> RenderableType:
-    """Render the active or specified task planning board as an ASCII panel with session tabs."""
+def render_ascii_task_board(
+    db: TaskDB | None = None,
+    session_id: Optional[int] = None,
+    selected_task_idx: Optional[int] = None,
+) -> RenderableType:
     db = db or TaskDB()
     sessions = db.list_sessions(limit=10)
     session = db.get_session(session_id) if session_id is not None else db.get_active_session()
@@ -37,8 +40,8 @@ def render_ascii_task_board(db: TaskDB | None = None, session_id: Optional[int] 
         ))
         return Panel(
             empty_grid,
-            title="[~] Betteragy Task Board",
-            subtitle="[dim]<- / -> Switch Tab | Press Enter to set active[/dim]",
+            title="[*] Betteragy Task Board",
+            subtitle="[dim]←/→ Switch Tab  |  [s] Sessions List  |  [c] Clear Tasks[/dim]",
             border_style="cyan",
         )
 
@@ -51,11 +54,11 @@ def render_ascii_task_board(db: TaskDB | None = None, session_id: Optional[int] 
     progress_bar = f"\\[{'#' * filled_len}{'-' * (bar_len - filled_len)}]"
 
     table = Table(show_header=True, header_style="bold white", box=None, padding=(0, 1))
+    table.add_column("Cursor", width=3, justify="center")
     table.add_column("Status", width=6, justify="center")
     table.add_column("ID", width=4, justify="right", style="dim")
-    table.add_column("Task Title & Verification Evidence", ratio=1)
+    table.add_column("Task Title", ratio=1, no_wrap=True)
     table.add_column("Priority", width=8, justify="center")
-
     status_styles = {
         "pending": ("[ ]", "dim white"),
         "in_progress": ("[>]", "bold yellow"),
@@ -63,38 +66,37 @@ def render_ascii_task_board(db: TaskDB | None = None, session_id: Optional[int] 
         "blocked": ("[x]", "bold red"),
     }
 
-    for t in tasks:
+    sel_task = None
+    for i, t in enumerate(tasks):
+        is_sel = selected_task_idx is not None and i == selected_task_idx
+        if is_sel:
+            sel_task = t
+        cursor = ">" if is_sel else " "
         icon, style = status_styles.get(t["status"], ("[?]", "white"))
-        status_cell = Text(icon, style=style)
-
-        title_text = Text()
-        title_text.append(t["title"], style=style)
-        if t.get("evidence"):
-            title_text.append(f"\n  Evidence: {t['evidence']}", style="dim green")
-        elif t.get("description"):
-            title_text.append(f"\n  {t['description']}", style="dim")
-
+        status_cell = Text(icon, style="bold cyan" if is_sel else style)
+        title_text = Text(t["title"], style="bold cyan" if is_sel else style)
         pri_color = {"high": "bold red", "medium": "yellow", "low": "cyan"}.get(t["priority"], "white")
         pri_cell = Text(t["priority"].upper(), style=pri_color)
-
-        table.add_row(status_cell, str(t["id"]), title_text, pri_cell)
-
+        row_style = "bold white on #060d42" if is_sel else None
+        table.add_row(cursor, status_cell, str(t["id"]), title_text, pri_cell, style=row_style)
     summary_text = (
         f"[bold cyan][~] GOAL{sid_str}:[/] [bold white]{goal}[/]{project}\n"
         f"[dim]Progress:[/] [green]{progress_bar}[/] [bold white]{pct}%[/] "
         f"([cyan]{completed_count}/{total_count}[/] tasks verified)\n"
     )
-
     content = Table.grid(padding=(0, 0))
     if sessions:
         content.add_row(tab_bar)
         content.add_row(Text(""))
     content.add_row(summary_text)
     content.add_row(table)
+    if sel_task and (sel_task.get("evidence") or sel_task.get("description")):
+        detail = Text("\n>> Task Detail: ", style="bold cyan")
+        detail.append(sel_task.get("evidence") or sel_task.get("description") or "", style="dim green" if sel_task.get("evidence") else "dim")
+        content.add_row(detail)
 
     return Panel(
         content,
         title="[*] Betteragy Task Board",
-        subtitle=f"[dim]<- / -> Switch Tab | Session #{session['id'] if session else 'N/A'} | {total_count} total | {completed_count} verified[/dim]",
-        border_style="cyan",
+        subtitle=f"[dim]↑/↓ Select Task  |  Space Toggle Status  |  [c] Clear Tasks  |  ←/→ Tab #{session['id'] if session else 'N/A'}[/dim]",
     )

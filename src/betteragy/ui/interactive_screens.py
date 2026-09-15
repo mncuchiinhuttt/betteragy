@@ -156,7 +156,7 @@ def render_footer_hints(screen_name: str = "main") -> Panel:
     elif screen_name == "oauth":
         hints = f"[{th.quota_low}]Esc/b[/{th.quota_low}] Cancel Login  |  [{th.quota_low}]q[/{th.quota_low}] Exit"
     elif screen_name == "tasks":
-        hints = f"[{th.primary}]Esc/b[/{th.primary}] Menu  |  [{th.primary}]Left/Right[/{th.primary}] Switch Tab  |  [{th.quota_high}]Enter[/{th.quota_high}] Set Active  |  [{th.secondary}]r[/{th.secondary}] Refresh  |  [{th.quota_low}]q[/{th.quota_low}] Exit"
+        hints = f"[{th.primary}]↑/↓[/{th.primary}] Select  |  [{th.primary}]←/→[/{th.primary}] Tab  |  [{th.quota_high}]Space/Enter[/{th.quota_high}] Toggle  |  [{th.quota_low}]c[/{th.quota_low}] Clear Tasks  |  [{th.secondary}]s[/{th.secondary}] Sessions  |  [{th.quota_low}]Esc/b[/{th.quota_low}] Back"
     elif screen_name == "session_selector":
         hints = f"[{th.primary}]Up/Down[/{th.primary}] Navigate  |  [{th.quota_high}]Enter[/{th.quota_high}] Switch  |  [{th.quota_low}]Esc/b[/{th.quota_low}] Back"
     elif screen_name == "theme":

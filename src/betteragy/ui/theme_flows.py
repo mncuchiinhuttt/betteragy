@@ -23,9 +23,9 @@ def render_theme_selector_panel(
     table = Table(box=DEFAULT_BOX, header_style=active_th.header_style, padding=(0, 1))
     table.add_column("Cursor", width=3, justify="center")
     table.add_column("#", style=active_th.dim_style, width=3, justify="right")
-    table.add_column("Theme Name", min_width=18)
-    table.add_column("Palette Style", style=active_th.dim_style, min_width=38)
-    table.add_column("Quota Sample", justify="left", width=22)
+    table.add_column("Theme Name", min_width=18, no_wrap=True)
+    table.add_column("Palette Style", style=active_th.dim_style, min_width=32, no_wrap=True)
+    table.add_column("Quota Sample", justify="left", width=18, no_wrap=True)
 
     for i, item in enumerate(themes):
         is_sel = i == selected_idx

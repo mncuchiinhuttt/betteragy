@@ -81,3 +81,42 @@ def test_mouse_hover_tracking():
     # Hover over Row 6 (Item 2) -> changes index to 2
     assert handle_mouse_hover(mock_tui, 15, 6) is True
     assert mock_tui.menu_idx == 2
+
+def test_mouse_hover_and_click_theme():
+    """Verify mouse hover and click on theme catalog."""
+    from unittest.mock import patch
+    mock_tui = MagicMock()
+    mock_tui.current_screen = "theme"
+    mock_tui.status_message = ""
+    mock_tui.theme_idx = 0
+
+    # Hover over line 6 (Theme 1: Emerald Forest)
+    assert handle_mouse_hover(mock_tui, 15, 6) is True
+    assert mock_tui.theme_idx == 1
+
+    with patch("betteragy.ui.theme_manager.ThemeManager.set_active_theme") as mock_set:
+        mock_set.return_value = True
+        handle_mouse_click(mock_tui, 15, 6)
+        assert mock_tui.current_screen == "main"
+        assert mock_set.called
+def test_mouse_tasks_hover_and_clear():
+    """Verify mouse hover over tasks and clear tasks button."""
+    mock_tui = MagicMock()
+    mock_tui.current_screen = "tasks"
+    mock_tui.status_message = ""
+    mock_tui.task_idx = 0
+    mock_tui.selected_session_id = 1
+    mock_tui.task_db.list_sessions.return_value = [{"id": 1}]
+    mock_tui.task_db.get_tasks.return_value = [
+        {"id": 10, "title": "Task 1", "status": "pending", "priority": "high"},
+        {"id": 11, "title": "Task 2", "status": "in_progress", "priority": "medium"},
+    ]
+    mock_tui.task_db.clear_tasks.return_value = 2
+
+    # Hover over line 11 (Task 1)
+    assert handle_mouse_hover(mock_tui, 15, 11) is True
+    assert mock_tui.task_idx == 1
+
+    # Click clear tasks button at line 21
+    handle_mouse_click(mock_tui, 20, 21)
+    assert "Cleared 2 task(s)" in mock_tui.status_message

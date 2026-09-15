@@ -88,52 +88,61 @@ def handle_mouse_click(tui, x: int, y: int) -> bool:
     if screen == "theme":
         from .theme_manager import get_theme_manager
         themes = get_theme_manager().list_themes()
-        # Each theme row in table takes 2 vertical lines (name + wrapped palette description)
         table_start_y = 5 + offset
-        table_end_y = table_start_y + (len(themes) * 2) - 1
-
+        table_end_y = table_start_y + len(themes) - 1
         if table_start_y <= y <= table_end_y:
-            idx = (y - table_start_y) // 2
-            if 0 <= idx < len(themes):
-                tui.theme_idx = idx
-                from .theme_flows import handle_theme_key
-                return handle_theme_key(tui, KEY_ENTER)
-
-        # Click on Back / Footer hints
+            tui.theme_idx = y - table_start_y
+            from .theme_flows import handle_theme_key
+            return handle_theme_key(tui, KEY_ENTER)
         if y > table_end_y:
             tui.current_screen = "main"
             tui.status_message = ""
             return False
-
     # 4. Add Account Screen
     if screen == "add_account":
-        m_start_y = 2 + offset
-        if y == m_start_y:
-            tui.add_idx = 0
+        m_start = 2 + offset
+        if y in (m_start, m_start + 1):
+            tui.add_idx = y - m_start
             from .account_flows import handle_add_account_key
             handle_add_account_key(tui, KEY_ENTER)
-            return False
-        if y == m_start_y + 1:
-            tui.add_idx = 1
-            from .account_flows import handle_add_account_key
-            handle_add_account_key(tui, KEY_ENTER)
-            return False
-        if y > m_start_y + 1:
+        elif y > m_start + 1:
             tui.current_screen = "main"
+        return False
+
+    # 5. Tasks Board Screen
+    if screen == "tasks":
+        from .session_flows import handle_tasks_key
+        if y in (2 + offset, 3 + offset):
+            handle_tasks_key(tui, "RIGHT")
+            return False
+        sessions = tui.task_db.list_sessions(limit=20)
+        cur_id = getattr(tui, "selected_session_id", None) or (sessions[0]["id"] if sessions else None)
+        tasks = tui.task_db.get_tasks(session_id=cur_id) if cur_id else []
+        table_start_y = 10 + offset
+        table_end_y = table_start_y + len(tasks) - 1
+        if tasks and table_start_y <= y <= table_end_y:
+            idx = y - table_start_y
+            if 0 <= idx < len(tasks):
+                tui.task_idx = idx
+                handle_tasks_key(tui, " ")
+                return False
+        if y >= 21 + offset:
+            if x < 45:
+                handle_tasks_key(tui, "c")
+            else:
+                tui.current_screen = "main"
             return False
 
-    # 5. Proxy Screen
+    # 6. Proxy Screen
     if screen == "proxy":
         from .proxy_flows import handle_proxy_key
-        # Click on Status / Toggle button or Footer 'p'
         if y in (4 + offset, 17 + offset, 20 + offset):
             return handle_proxy_key(tui, "p")
-        # Click on Back
         if y in (18 + offset, 21 + offset) or y > 18 + offset:
             tui.current_screen = "main"
             return False
 
-    # 6. Informational Screens (Quota, Usage, Shell, Harness, Tasks)
+    # 7. Other screens: click to return to main
     tui.current_screen = "main"
     tui.status_message = ""
     return False
@@ -158,30 +167,32 @@ def handle_mouse_hover(tui, x: int, y: int) -> bool:
     if screen in ("switch_account", "remove_account"):
         start_y = 5 + offset
         accs = tui.acc_svc.get_accounts()
-        if start_y <= y < start_y + len(accs):
-            idx = y - start_y
-            if idx != tui.account_idx:
-                tui.account_idx = idx
-                return True
+        if start_y <= y < start_y + len(accs) and (y - start_y) != tui.account_idx:
+            tui.account_idx = y - start_y
+            return True
         return False
 
     if screen == "theme":
         from .theme_manager import get_theme_manager
         themes = get_theme_manager().list_themes()
         start_y = 5 + offset
-        if start_y <= y < start_y + (len(themes) * 2):
-            idx = (y - start_y) // 2
-            if idx != getattr(tui, "theme_idx", 0):
-                tui.theme_idx = idx
-                return True
+        if start_y <= y < start_y + len(themes) and (y - start_y) != getattr(tui, "theme_idx", 0):
+            tui.theme_idx = y - start_y
+            return True
         return False
 
-    if screen == "add_account":
-        m_start_y = 2 + offset
-        if y in (m_start_y, m_start_y + 1):
-            idx = y - m_start_y
-            if idx != tui.add_idx:
-                tui.add_idx = idx
-                return True
+    if screen == "tasks":
+        sessions = tui.task_db.list_sessions(limit=20)
+        cur_id = getattr(tui, "selected_session_id", None) or (sessions[0]["id"] if sessions else None)
+        tasks = tui.task_db.get_tasks(session_id=cur_id) if cur_id else []
+        start_y = 10 + offset
+        if tasks and start_y <= y < start_y + len(tasks) and (y - start_y) != getattr(tui, "task_idx", 0):
+            tui.task_idx = y - start_y
+            return True
+        return False
+
+    if screen == "add_account" and y in (2 + offset, 3 + offset) and (y - (2 + offset)) != tui.add_idx:
+        tui.add_idx = y - (2 + offset)
+        return True
 
     return False
