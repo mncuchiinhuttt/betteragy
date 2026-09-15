@@ -1,4 +1,4 @@
-"""Mouse click and scroll event dispatcher for InteractiveTUI screens."""
+"""Precise mouse click and scroll event dispatcher for InteractiveTUI screens."""
 
 from typing import Optional
 from .interactive_screens import MAIN_MENU_ITEMS
@@ -13,13 +13,18 @@ def handle_mouse_click(tui, x: int, y: int) -> bool:
     has_status = bool(tui.status_message)
     offset = 3 if has_status else 0
 
+    # Determine console width
+    raw_w = getattr(getattr(tui, "console", None), "width", 100)
+    c_width = raw_w if isinstance(raw_w, int) else 100
+    is_wide_2col = c_width >= 150
+
     # 1. Main Menu Screen
     if screen == "main":
-        menu_start_y = 5 + offset
+        menu_start_y = 4 + offset
         menu_end_y = menu_start_y + len(MAIN_MENU_ITEMS) - 1
-        raw_w = getattr(getattr(tui, "console", None), "width", 100)
-        c_width = raw_w if isinstance(raw_w, int) else 100
-        is_menu_col = x <= 65 or c_width < 95
+
+        # Check if click is on left menu column
+        is_menu_col = (x <= 75) if is_wide_2col else True
 
         if is_menu_col and menu_start_y <= y <= menu_end_y:
             clicked_idx = y - menu_start_y
@@ -29,21 +34,41 @@ def handle_mouse_click(tui, x: int, y: int) -> bool:
                 action = MAIN_MENU_ITEMS[clicked_idx][0]
                 return tui._dispatch_action(action)
 
-        # Right column shortcut clicks on desktop
-        if c_width >= 95 and x > 65:
-            # Proxy shortcut or theme shortcut in right column
-            if y in (menu_start_y + 1, menu_start_y + 2):
+        # Right column shortcut clicks on wide screens (side-by-side)
+        if is_wide_2col and x > 75:
+            # Overview panel rows (Auto-rotate at line 5-6, Theme at line 7)
+            if y in (5 + offset, 6 + offset):
                 tui.current_screen = "proxy"
                 return False
-            if y in (menu_start_y + 3, menu_start_y + 4):
+            if y == 7 + offset:
                 return tui._dispatch_action("Theme")
+            # Quota panel rows
+            if 11 + offset <= y <= 15 + offset:
+                return tui._dispatch_action("Quota")
+
+        # Stacked layout on standard screens (< 150 cols)
+        if not is_wide_2col:
+            # Overview Card
+            if y in (18 + offset, 21 + offset, 22 + offset):
+                tui.current_screen = "proxy"
+                return False
+            if y == 23 + offset:
+                return tui._dispatch_action("Theme")
+            # Quota Card
+            if 26 + offset <= y <= 29 + offset:
+                return tui._dispatch_action("Quota")
+            # Footer hint: click Exit
+            if y >= 30 + offset:
+                if x >= c_width - 15 or "Exit" in MAIN_MENU_ITEMS[tui.menu_idx][0]:
+                    return True
 
         return False
 
     # 2. Account List Screens (Switch or Remove)
     if screen in ("switch_account", "remove_account"):
         accounts = tui.acc_svc.get_accounts()
-        table_start_y = 4 + offset
+        # Account 0 starts at line 5 + offset
+        table_start_y = 5 + offset
         table_end_y = table_start_y + len(accounts) - 1
 
         if table_start_y <= y <= table_end_y:
@@ -53,7 +78,7 @@ def handle_mouse_click(tui, x: int, y: int) -> bool:
                 from .account_flows import handle_account_list_key
                 return handle_account_list_key(tui, KEY_ENTER)
 
-        # Click on back / exit hints
+        # Click on Back / Footer hints
         if y > table_end_y:
             tui.current_screen = "main"
             tui.status_message = ""
@@ -63,16 +88,18 @@ def handle_mouse_click(tui, x: int, y: int) -> bool:
     if screen == "theme":
         from .theme_manager import get_theme_manager
         themes = get_theme_manager().list_themes()
-        table_start_y = 4 + offset
-        table_end_y = table_start_y + len(themes) - 1
+        # Each theme row in table takes 2 vertical lines (name + wrapped palette description)
+        table_start_y = 5 + offset
+        table_end_y = table_start_y + (len(themes) * 2) - 1
 
         if table_start_y <= y <= table_end_y:
-            idx = y - table_start_y
+            idx = (y - table_start_y) // 2
             if 0 <= idx < len(themes):
                 tui.theme_idx = idx
                 from .theme_flows import handle_theme_key
                 return handle_theme_key(tui, KEY_ENTER)
 
+        # Click on Back / Footer hints
         if y > table_end_y:
             tui.current_screen = "main"
             tui.status_message = ""
@@ -80,7 +107,7 @@ def handle_mouse_click(tui, x: int, y: int) -> bool:
 
     # 4. Add Account Screen
     if screen == "add_account":
-        m_start_y = 3 + offset
+        m_start_y = 2 + offset
         if y == m_start_y:
             tui.add_idx = 0
             from .account_flows import handle_add_account_key
@@ -98,17 +125,63 @@ def handle_mouse_click(tui, x: int, y: int) -> bool:
     # 5. Proxy Screen
     if screen == "proxy":
         from .proxy_flows import handle_proxy_key
-        # Check toggle button click or back
-        if 8 + offset <= y <= 12 + offset:
+        # Click on Status / Toggle button or Footer 'p'
+        if y in (4 + offset, 17 + offset, 20 + offset):
             return handle_proxy_key(tui, "p")
-        if y >= 14 + offset:
+        # Click on Back
+        if y in (18 + offset, 21 + offset) or y > 18 + offset:
             tui.current_screen = "main"
             return False
 
     # 6. Informational Screens (Quota, Usage, Shell, Harness, Tasks)
-    if screen in ("quota", "usage", "shell", "harness", "tasks", "oauth_waiting"):
-        tui.current_screen = "main"
-        tui.status_message = ""
+    tui.current_screen = "main"
+    tui.status_message = ""
+    return False
+
+
+def handle_mouse_hover(tui, x: int, y: int) -> bool:
+    """Update selection cursor on mouse hover. Returns True if selection changed."""
+    screen = tui.current_screen
+    offset = 3 if bool(tui.status_message) else 0
+    raw_w = getattr(getattr(tui, "console", None), "width", 100)
+    is_wide_2col = (raw_w if isinstance(raw_w, int) else 100) >= 150
+
+    if screen == "main":
+        start_y = 4 + offset
+        if ((x <= 75) if is_wide_2col else True) and start_y <= y < start_y + len(MAIN_MENU_ITEMS):
+            idx = y - start_y
+            if idx != tui.menu_idx:
+                tui.menu_idx = idx
+                return True
         return False
+
+    if screen in ("switch_account", "remove_account"):
+        start_y = 5 + offset
+        accs = tui.acc_svc.get_accounts()
+        if start_y <= y < start_y + len(accs):
+            idx = y - start_y
+            if idx != tui.account_idx:
+                tui.account_idx = idx
+                return True
+        return False
+
+    if screen == "theme":
+        from .theme_manager import get_theme_manager
+        themes = get_theme_manager().list_themes()
+        start_y = 5 + offset
+        if start_y <= y < start_y + (len(themes) * 2):
+            idx = (y - start_y) // 2
+            if idx != getattr(tui, "theme_idx", 0):
+                tui.theme_idx = idx
+                return True
+        return False
+
+    if screen == "add_account":
+        m_start_y = 2 + offset
+        if y in (m_start_y, m_start_y + 1):
+            idx = y - m_start_y
+            if idx != tui.add_idx:
+                tui.add_idx = idx
+                return True
 
     return False

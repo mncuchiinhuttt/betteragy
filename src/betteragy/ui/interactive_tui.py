@@ -17,6 +17,7 @@ from .interactive_renderer import build_screen_elements
 from .interactive_screens import MAIN_MENU_ITEMS
 from .key_listener import KEY_BACK, KEY_DOWN, KEY_ENTER, KEY_ESC, KEY_QUIT, KEY_REFRESH, KEY_UP, KeyListener
 from .menu_dispatcher import dispatch_main_menu_action
+from .mouse_handler import handle_mouse_click, handle_mouse_hover
 from .proxy_flows import handle_proxy_key
 from .session_flows import handle_session_selector_key, handle_tasks_key
 from .theme import BETTERAGY_THEME
@@ -68,11 +69,16 @@ class InteractiveTUI:
                         time.sleep(0.03)
                         continue
 
+                    if key.startswith("HOVER:"):
+                        _, xs, ys = key.split(":")
+                        if handle_mouse_hover(self, int(xs), int(ys)):
+                            needs_redraw = True
+                        continue
+
                     needs_redraw = True
                     if key.startswith("CLICK:"):
-                        from .mouse_handler import handle_mouse_click
-                        _, x_s, y_s = key.split(":")
-                        if handle_mouse_click(self, int(x_s), int(y_s)):
+                        _, xs, ys = key.split(":")
+                        if handle_mouse_click(self, int(xs), int(ys)):
                             break
                         continue
 

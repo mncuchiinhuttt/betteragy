@@ -3,7 +3,7 @@
 from unittest.mock import MagicMock
 from betteragy.core.models import AccountRecord
 from betteragy.ui.key_listener import KEY_DOWN, KEY_UP, KeyListener
-from betteragy.ui.mouse_handler import handle_mouse_click
+from betteragy.ui.mouse_handler import handle_mouse_click, handle_mouse_hover
 
 
 def test_mouse_sgr_sequence_parsing():
@@ -16,7 +16,10 @@ def test_mouse_sgr_sequence_parsing():
     assert KeyListener._parse_unix_sequence(b"\x1b[<64;10;5M") == KEY_UP
     # Wheel down (b=65) -> KEY_DOWN
     assert KeyListener._parse_unix_sequence(b"\x1b[<65;10;5M") == KEY_DOWN
-
+    # Mouse motion / hover (b=35) -> HOVER:20:8
+    assert KeyListener._parse_unix_sequence(b"\x1b[<35;20;8M") == "HOVER:20:8"
+    # Multi-sequence buffer takes latest -> HOVER:10:9
+    assert KeyListener._parse_unix_sequence(b"\x1b[<35;10;5M\x1b[<35;10;9M") == "HOVER:10:9"
 
 def test_mouse_click_main_menu():
     """Verify clicking menu rows triggers item selection and action dispatch."""
@@ -26,14 +29,14 @@ def test_mouse_click_main_menu():
     mock_tui.console.width = 100
     mock_tui._dispatch_action.return_value = False
 
-    # Row 5 corresponds to Item 0 ([1] Switch Account)
-    handle_mouse_click(mock_tui, 10, 5)
+    # Row 4 corresponds to Item 0 ([1] Switch Account)
+    handle_mouse_click(mock_tui, 10, 4)
     assert mock_tui.menu_idx == 0
     assert mock_tui._dispatch_action.called
 
-    # Row 6 corresponds to Item 1 ([2] Live AI Quotas)
+    # Row 5 corresponds to Item 1 ([2] Live AI Quotas)
     mock_tui._dispatch_action.reset_mock()
-    handle_mouse_click(mock_tui, 10, 6)
+    handle_mouse_click(mock_tui, 10, 5)
     assert mock_tui.menu_idx == 1
     assert mock_tui._dispatch_action.called
 
@@ -48,12 +51,33 @@ def test_mouse_click_account_list():
         AccountRecord(email="acc1@gmail.com", refresh_token="rf1"),
         AccountRecord(email="acc2@gmail.com", refresh_token="rf2"),
     ]
-    # Row 4 corresponds to Account 0
-    handle_mouse_click(mock_tui, 12, 4)
+    # Row 5 corresponds to Account 0
+    handle_mouse_click(mock_tui, 12, 5)
     mock_tui.acc_svc.switch_account.assert_called_with("acc1@gmail.com")
 
-    # Reset screen and status_message; row 5 corresponds to Account 1
+    # Reset screen and status_message; row 6 corresponds to Account 1
     mock_tui.current_screen = "switch_account"
     mock_tui.status_message = ""
-    handle_mouse_click(mock_tui, 12, 5)
+    handle_mouse_click(mock_tui, 12, 6)
     mock_tui.acc_svc.switch_account.assert_called_with("acc2@gmail.com")
+
+
+def test_mouse_hover_tracking():
+    """Verify mouse hover moves selection cursor in real time."""
+    mock_tui = MagicMock()
+    mock_tui.current_screen = "main"
+    mock_tui.status_message = ""
+    mock_tui.menu_idx = 0
+    mock_tui.console.width = 100
+
+    # Hover over Row 5 (Item 1) -> changes index from 0 to 1, returns True (redraw)
+    assert handle_mouse_hover(mock_tui, 15, 5) is True
+    assert mock_tui.menu_idx == 1
+
+    # Hover again over Row 5 -> index already 1, returns False (no unnecessary redraw)
+    assert handle_mouse_hover(mock_tui, 25, 5) is False
+    assert mock_tui.menu_idx == 1
+
+    # Hover over Row 6 (Item 2) -> changes index to 2
+    assert handle_mouse_hover(mock_tui, 15, 6) is True
+    assert mock_tui.menu_idx == 2
