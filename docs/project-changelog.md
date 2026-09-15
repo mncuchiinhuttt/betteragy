@@ -22,7 +22,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Reasoning Harness Request Tiers & Proactive Clarification Gate (`strict_harness.md`, `balanced_harness.md`, `templates.py`)**:
     - Established 3 Request Complexity Tiers (Tier 1: Atomic 1-2 tasks max, Tier 2: Features 2-4 tasks, Tier 3: Architecture 4-6 tasks) to eliminate artificial planning bureaucracy for simple requests.
     - Added Mandatory Proactive Clarification Gate instructing the agent to pause and ask structured follow-up questions with recommended options whenever user intent, UI layout, or requirements have trade-offs.
-  - **Comprehensive Unit & Integration Test Suite (`test_cert_service.py`, `test_proxy.py`, `test_proxy_tui.py`, `test_auto_config.py`, `test_quota.py`, `test_harness_service.py`)**: Full automated test coverage with 71/71 tests passing.
+  - **Dynamic Theme Engine & Color Palette Customization (`theme_catalog.py`, `theme_model.py`, `theme_manager.py`, `theme_flows.py`, `menu_dispatcher.py`)**:
+    - Implemented 7 built-in theme presets: **Gruvbox Warm** (Default, optimized for warm ivory/cream terminal backgrounds with terracotta rust, forest green, and amber highlights), **Emerald Forest** (lush greens, mint & sage), **Cyber Dark** (neon cyan & magenta), **Dracula** (vibrant purple & pastel pink), **Monokai Pro** (sunny yellow & lime), **Nord Arctic** (frost blue & polar night), and **Modern Minimal** (clean monochrome).
+    - Added TUI Theme Selector Screen (`[*] Color Themes`) accessible from Main Menu with live quota progress bar sample previews and instant theme switching.
+    - Added `theme` persistence to `AccountsStorage` (`~/.config/betteragy/accounts.json`).
+    - Modularized `menu_dispatcher.py` to keep all interactive TUI files strictly under 170 lines.
+  - **True-Green Quota Progress Bar Grading (`theme.py`, `tables.py`, `test_quota.py`, `test_theme.py`)**:
+    - Replaced ambiguous ANSI 32 color name with explicit 24-bit TrueColor hex codes (`#16a34a` / `#22c55e` / `#50fa7b` / `#a9dc76` / `#a3be8c`) across all themes, guaranteeing that high quota (>= 50%) is unequivocally vibrant green and never rendered as blue or teal regardless of the terminal emulator's custom ANSI 16 color map.
+    - Dynamically themed status badges (`[*] Active`, `[+] Ready`, `[!] Cooldown`, `[x] Disabled`), table titles, headers, borders, cursors, and selection highlights.
+  - **Comprehensive Unit & Integration Test Suite (`test_theme.py`, `test_cert_service.py`, `test_proxy.py`, `test_proxy_tui.py`, `test_auto_config.py`, `test_quota.py`, `test_interactive_tui.py`)**: Full automated test coverage with 76/76 tests passing.
 
 ## [1.1.0] - 2026-09-14
 

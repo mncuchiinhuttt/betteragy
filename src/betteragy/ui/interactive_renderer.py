@@ -85,6 +85,13 @@ def build_screen_elements(tui) -> list:
     elif tui.current_screen == "proxy":
         from .proxy_flows import render_proxy_panel
         elements.extend([render_proxy_panel(tui), render_footer_hints("proxy")])
+    elif tui.current_screen == "theme":
+        from .theme_flows import render_theme_selector_panel
+        from .theme_manager import get_theme_manager
+        mgr = get_theme_manager()
+        themes = mgr.list_themes()
+        active_id = mgr.get_active_theme_id()
+        elements.extend([render_theme_selector_panel(themes, getattr(tui, "theme_idx", 0), active_id), render_footer_hints("theme")])
 
     return elements
 

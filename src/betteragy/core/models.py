@@ -23,6 +23,7 @@ class AccountsStorage(BaseModel):
     """Storage container for all accounts and switcher preferences."""
     active_email: Optional[str] = None
     rotate_strategy: Literal["round-robin", "random", "sticky", "least-used"] = "round-robin"
+    theme: str = "warm"
     accounts: list[AccountRecord] = Field(default_factory=list)
 
 

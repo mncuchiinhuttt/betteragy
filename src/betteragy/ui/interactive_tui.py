@@ -16,9 +16,11 @@ from .account_flows import OAuthWorker, finish_oauth, handle_account_list_key, h
 from .interactive_renderer import build_screen_elements
 from .interactive_screens import MAIN_MENU_ITEMS
 from .key_listener import KEY_BACK, KEY_DOWN, KEY_ENTER, KEY_ESC, KEY_QUIT, KEY_REFRESH, KEY_UP, KeyListener
+from .menu_dispatcher import dispatch_main_menu_action
 from .proxy_flows import handle_proxy_key
 from .session_flows import handle_session_selector_key, handle_tasks_key
 from .theme import BETTERAGY_THEME
+from .theme_flows import handle_theme_key
 
 
 class InteractiveTUI:
@@ -38,6 +40,7 @@ class InteractiveTUI:
         self.update_ver = info.latest_version if (info and info.is_newer) else None
         self.current_screen = "main"
         self.menu_idx = self.account_idx = self.add_idx = self.session_idx = self.session_tab_idx = 0
+        self.theme_idx = 0
         self.selected_session_id = None
         self.status_message = ""
         self.cached_quota = self.cached_report = None
@@ -72,22 +75,25 @@ class InteractiveTUI:
                         if self._handle_main_key(key):
                             break
                     elif self.current_screen in ("switch_account", "remove_account"):
-                        if handle_account_list_key(self, key):
+                        if self._handle_account_list_key(key):
                             break
                     elif self.current_screen == "add_account":
-                        handle_add_account_key(self, key)
+                        self._handle_add_account_key(key)
                     elif self.current_screen == "oauth_waiting":
                         if key in (KEY_ESC, KEY_BACK, KEY_QUIT):
                             self.current_screen = "main"
                             self.status_message = "[yellow]OAuth login cancelled.[/yellow]"
                     elif self.current_screen == "tasks":
-                        if handle_tasks_key(self, key):
+                        if self._handle_tasks_key(key):
                             break
                     elif self.current_screen == "session_selector":
-                        if handle_session_selector_key(self, key):
+                        if self._handle_session_selector_key(key):
                             break
                     elif self.current_screen == "proxy":
-                        if handle_proxy_key(self, key):
+                        if self._handle_proxy_key(key):
+                            break
+                    elif self.current_screen == "theme":
+                        if self._handle_theme_key(key):
                             break
                     elif self.current_screen in ("quota", "usage", "shell", "harness"):
                         if key == KEY_QUIT:
@@ -127,47 +133,7 @@ class InteractiveTUI:
 
     def _dispatch_action(self, action: str) -> bool:
         """Dispatch enter key action on selected main menu item."""
-        self.status_message = ""
-        if "Switch Account" in action:
-            self.current_screen, self.account_idx = "switch_account", 0
-        elif "Add Account" in action:
-            self.current_screen, self.add_idx = "add_account", 0
-        elif "Remove Account" in action:
-            accounts = self.acc_svc.get_accounts()
-            if not accounts:
-                self.status_message = "[yellow]No accounts in pool to remove.[/yellow]"
-            else:
-                self.current_screen, self.account_idx = "remove_account", 0
-        elif "Live AI Quotas" in action:
-            self.cached_quota, self.current_screen = None, "quota"
-        elif "Token Usage" in action:
-            self.cached_report, self.current_screen = None, "usage"
-        elif "Rotate Account" in action:
-            ok, msg = self.rot_svc.rotate()
-            self.status_message = f"[bold green][ok] {msg}[/bold green]" if ok else f"[red][x] {msg}[/red]"
-        elif "Set Cooldown" in action:
-            ok, msg = self.rot_svc.set_cooldown(hours=4.0)
-            self.status_message = f"[yellow]{msg}[/yellow]"
-        elif "Tasks" in action:
-            self.current_screen = "tasks"
-        elif "Harness" in action:
-            self.current_screen = "harness"
-        elif "Proxy" in action:
-            self.current_screen = "proxy"
-        elif "Shell Integration" in action:
-            self.current_screen = "shell"
-        elif "Updates" in action:
-            info = self.update_svc.check_for_updates(force=True)
-            if info and info.is_newer:
-                self.update_ver = info.latest_version
-                self.status_message = f"[bold yellow][!] Update available: v{info.latest_version}[/bold yellow]"
-            elif info:
-                self.status_message = f"[bold green][ok] Betteragy is up to date (v{info.current_version})[/bold green]"
-            else:
-                self.status_message = "[yellow][!] Could not check for updates (offline)[/yellow]"
-        elif "Exit" in action:
-            return True
-        return False
+        return dispatch_main_menu_action(self, action)
 
     def _handle_account_list_key(self, key: str) -> bool:
         return handle_account_list_key(self, key)
@@ -183,6 +149,9 @@ class InteractiveTUI:
 
     def _handle_proxy_key(self, key: str) -> bool:
         return handle_proxy_key(self, key)
+
+    def _handle_theme_key(self, key: str) -> bool:
+        return handle_theme_key(self, key)
 
 
 def run_interactive_tui():

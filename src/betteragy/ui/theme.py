@@ -4,35 +4,38 @@ from rich import box
 from rich.style import Style
 from rich.theme import Theme
 
+from .theme_catalog import ThemeDefinition
+from .theme_manager import get_theme_manager
+
 DEFAULT_BOX = box.ROUNDED
 
-BETTERAGY_THEME = Theme({
-    "primary": "bold cyan",
-    "secondary": "bold magenta",
-    "success": "bold green",
-    "warning": "bold yellow",
-    "danger": "bold red",
-    "dimmed": "dim white",
-    "accent": "bold #38bdf8",
-})
+
+def get_current_rich_theme() -> Theme:
+    """Get active Rich Theme from ThemeManager."""
+    return get_theme_manager().get_rich_theme()
 
 
-def render_progress_bar(percentage: float | int, width: int = 14) -> str:
+BETTERAGY_THEME = get_theme_manager().get_rich_theme()
+
+
+def render_progress_bar(percentage: float | int, width: int = 14, theme: ThemeDefinition | None = None) -> str:
     """Render a smooth solid block progress bar next to percentage remaining."""
     w = max(1, width)
     pct = max(0, min(100, int(round(percentage))))
     filled_len = int(round((pct / 100.0) * w))
     empty_len = w - filled_len
 
+    th = theme or get_theme_manager().get_active_theme()
+
     if pct >= 50:
-        color = "green"
-        track_color = "dim green"
+        color = th.quota_high
+        track_color = th.quota_high_track
     elif pct >= 20:
-        color = "yellow"
-        track_color = "dim yellow"
+        color = th.quota_mid
+        track_color = th.quota_mid_track
     else:
-        color = "red"
-        track_color = "dim red"
+        color = th.quota_low
+        track_color = th.quota_low_track
 
     filled_bar = f"[bold {color}]{'█' * filled_len}[/bold {color}]" if filled_len > 0 else ""
     empty_bar = f"[{track_color}]{'░' * empty_len}[/{track_color}]" if empty_len > 0 else ""
@@ -62,12 +65,13 @@ def format_cost(amount_usd: float) -> str:
     return "$0.00"
 
 
-def format_status_badge(is_active: bool, is_cooldown: bool, disabled: bool) -> str:
-    """Render consistent ASCII status badge for account rows."""
+def format_status_badge(is_active: bool, is_cooldown: bool, disabled: bool, theme: ThemeDefinition | None = None) -> str:
+    """Render consistent ASCII status badge for account rows according to active theme."""
+    th = theme or get_theme_manager().get_active_theme()
     if disabled:
-        return "[dim red][x] Disabled[/dim red]"
+        return th.disabled_badge
     if is_cooldown:
-        return "[yellow][!] Cooldown[/yellow]"
+        return th.cooldown_badge
     if is_active:
-        return "[bold green][*] Active[/bold green]"
-    return "[green][+] Ready[/green]"
+        return th.active_badge
+    return th.ready_badge

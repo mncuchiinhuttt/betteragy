@@ -32,6 +32,9 @@
 - [x] Auto-Rotation Proxy & Zero-Manual-Config Shell Integration (`auto_config.py`, `shell_cmd.py`, `agent_cmd.py` with automatic `~/.zshrc` hook and revert).
 - [x] Stream Framing & Chunked Transfer Decoder (`stream_utils.py`) resolving EOF on Keep-Alive Google Cloud Code Assist connections.
 - [x] Interactive TUI Proxy Screen & Live Badge (`proxy_flows.py`, `interactive_renderer.py`, `interactive_tui.py`).
+- [x] Dynamic Multi-Theme Engine (`theme_catalog.py`, `theme_manager.py`, `theme_flows.py`, `theme_model.py`) with 7 presets (Gruvbox Warm default, Emerald Forest, Cyber Dark, Dracula, Monokai Pro, Nord Arctic, Modern Minimal).
+- [x] True-Green Quota Progress Bar Grading (`theme.py`, `tables.py`) with 24-bit TrueColor hex color coding (`#16a34a` / `#22c55e`), eliminating terminal ANSI 32 cyan/teal mangling.
+- [x] Interactive Theme Selector Screen (`[*] Color Themes`) in TUI with live progress bar preview and instant persistence in `~/.config/betteragy/accounts.json`.
 
 ## Phase 4: IDE Realtime Integration (Planned - v0.3.0 / v1.3.0)
 - [ ] Direct Language Server process detector via process argv scanning (`--https_server_port`, `--csrf_token`).
