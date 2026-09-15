@@ -83,6 +83,13 @@ def main_callback(
 ):
     """Launch interactive TUI menu when invoked without subcommands."""
     if ctx.invoked_subcommand is None:
+        from .services.onboarding_service import OnboardingService
+        from .ui.onboarding_wizard import run_onboarding_wizard
+
+        onboard_svc = OnboardingService()
+        if onboard_svc.is_onboarding_needed():
+            run_onboarding_wizard(onboard_svc, interactive=sys.stdin.isatty())
+
         if sys.stdin.isatty():
             run_interactive_tui()
         else:
@@ -125,6 +132,21 @@ def update_command():
 def menu_command():
     """Launch interactive arrow-key TUI menu."""
     run_interactive_tui()
+
+
+@app.command("setup")
+@app.command("onboard")
+def setup_command(
+    force: bool = typer.Option(False, "--force", "-f", help="Force rerun onboarding wizard even if already set up"),
+):
+    """Run interactive first-time setup and onboarding wizard."""
+    from .services.onboarding_service import OnboardingService
+    from .ui.onboarding_wizard import run_onboarding_wizard
+
+    svc = OnboardingService()
+    if force:
+        svc.reset()
+    run_onboarding_wizard(svc, interactive=sys.stdin.isatty())
 
 
 if __name__ == "__main__":

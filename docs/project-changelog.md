@@ -46,6 +46,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - **Color-Coded ANSI Tree Output**: Added standard ANSI escape codes to `format_tasks_ascii_tree` with vibrant green for completed `[x]`, warm yellow/amber for active `[>]`, dim gray for pending `[ ]`, bold red for blocked `[!]`, and cyan/white for headers and progress ratios (`done/total`).
     - **Harness Enforcement**: Formulated mandatory harness directives requiring the agent to output the color-coded to-do tree in an ````ansi code block at every progress transition (`in_progress`, `completed`), eliminating end-of-session dump delays.
     - **Robust Regex Replacement**: Fixed `re.sub` escaping in `harness_service.py` to handle backslashes in replacement content without raising `re.error: bad escape`.
+  - **First-Run Onboarding Flow & Auto-Setup Wizard (`onboarding_service.py`, `onboarding_wizard.py`, `cli.py`, `test_onboarding_service.py`)**:
+    - **First-Run Auto-Detection**: Automatically detects when Betteragy is opened for the first time without prior configuration, launching an interactive 5-step wizard.
+    - **Step-by-Step Terminal Wizard**: Guides users through: 1. Account discovery & Keychain auto-import, 2. Deep reasoning harness installation (`strict` / `balanced`), 3. MCP task planning registration (`betteragy-todo`), 4. Autonomous shell alias configuration, 5. Full system health diagnostics.
+    - **Manual Rerun CLI Commands**: Added `betteragy setup` and `betteragy onboard` with `--force` support.
+
 
 
 ## [1.1.0] - 2026-09-14

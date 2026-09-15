@@ -54,3 +54,10 @@ def test_cli_version_command():
     res = runner.invoke(app, ["version"])
     assert res.exit_code == 0
     assert f"betteragy version {__version__}" in res.stdout
+
+
+def test_cli_setup_help():
+    res = runner.invoke(app, ["setup", "--help"])
+    assert res.exit_code == 0
+    assert "onboarding wizard" in res.stdout
+

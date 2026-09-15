@@ -36,6 +36,8 @@
 - [x] Dynamic Multi-Theme Engine (`theme_catalog.py`, `theme_manager.py`, `theme_flows.py`, `theme_model.py`) with 7 presets (Gruvbox Warm default, Emerald Forest, Cyber Dark, Dracula, Monokai Pro, Nord Arctic, Modern Minimal).
 - [x] True-Green Quota Progress Bar Grading (`theme.py`, `tables.py`) with 24-bit TrueColor hex color coding (`#16a34a` / `#22c55e`), eliminating terminal ANSI 32 cyan/teal mangling.
 - [x] Interactive Theme Selector Screen (`[*] Color Themes`) in TUI with live progress bar preview and instant persistence in `~/.config/betteragy/accounts.json`.
+- [x] First-Run Onboarding Flow & Auto-Setup Wizard (`onboarding_service.py`, `onboarding_wizard.py`) with 5-step guided setup (Keychain discovery, reasoning harness, MCP server, shell alias, system diagnostics).
+
 
 ## Phase 4: IDE Realtime Integration (Planned - v0.3.0 / v1.3.0)
 - [ ] Direct Language Server process detector via process argv scanning (`--https_server_port`, `--csrf_token`).
