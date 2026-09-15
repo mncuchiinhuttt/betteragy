@@ -129,3 +129,19 @@ Always classify incoming requests into one of three tiers to determine planning 
 5. **Lifecycle Cleanup**:
    - Once a subagent has delivered its findings, cleanly acknowledge or close the subagent to prevent dangling zombie tasks and token bloat.
 
+---
+
+## VIII. Quota Intelligence, Long-Running Execution & Checkpoints
+
+1. **Quota Intelligence & Proactive Rotation**:
+   - Before launching intensive coding loops or batch tasks, inspect quota via `quota_status`.
+   - If quota for primary models (Gemini 3.1 Pro, Claude 3.7 Sonnet) drops below 20%, proactively rotate accounts with `account_switch` or adjust model selection.
+2. **Autonomous Long-Running Wake-Up Protocol**:
+   - For tasks requiring wait periods (> 5-10 minutes, e.g. remote builds, benchmark runs):
+     - **Save Checkpoint**: Call `checkpoint_save(name=..., summary=..., next_steps=...)` to persist state across sessions/days.
+     - **Arm Wake-Up Timer**: Call `schedule(DurationSeconds=..., Prompt=...)` or `schedule(CronExpression=...)` to wake up autonomously without burning tokens in polling loops.
+     - **Overnight Execution**: Suggest the user run with `/goal` for uninterrupted multi-hour workflows.
+3. **Subagent Task Delegation & Dependencies**:
+   - When delegating work, register subagent roles with `todo_add(assigned_to='...', depends_on='...')`.
+   - Respect dependency constraints: Never start a dependent task while its prerequisites are still pending.
+

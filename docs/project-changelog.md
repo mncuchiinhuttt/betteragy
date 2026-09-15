@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2026-09-15
 
 ### Added
+- **Agent Quota Intelligence, Long-Running Checkpoints, Subagent Delegation & Autonomous Wake-Up Protocol**:
+  - **Quota & Account Intelligence MCP Tools (`quota_tools.py`)**: Added `quota_status` (model quota percentages, tier, countdowns, and proactive low-quota alerts), `account_list` (account pool overview), and `account_switch` (autonomous agent-driven account rotation to avoid 429 quota exhaustion).
+  - **Persistent Task Checkpoints & Multi-Day Memory (`checkpoint_db.py`, `checkpoint_tools.py`)**: Implemented `checkpoint_save`, `checkpoint_resume`, and `checkpoint_list` for saving structured state snapshots (accomplishments, next steps, context data) to persist agent memory across multi-day sessions.
+  - **Subagent Task Delegation & Dependency Engine (`task_schema.py`, `task_db.py`, `tree_formatter.py`, `todo_tools.py`)**: Added `assigned_to` and `depends_on` attributes to tasks, auto-migrated SQLite schema, implemented dependency validation that flags unmet prerequisites, and added subagent badges (`@researcher`, `needs #1`) to the ASCII tree checklist.
+  - **Unified MCP Tool Dispatcher (`todo_tools.py`, `todo_server.py`)**: Integrated all 11 tools into `betteragy-todo` JSON-RPC 2.0 stdio server, maintaining backward compatibility while extending agent capabilities.
+  - **Harness Autonomous Long-Running & Wake-Up Protocol (`strict_harness.md`, `balanced_harness.md`)**: Formulated directives for using `schedule` (one-shot timers and recurring crons) for autonomous wakeup on long tasks (> 5-10 mins), saving checkpoints before sleep, and running overnight sessions with `/goal`.
 - **Transparent Local MITM Proxy & Auto-Rotation Subsystem**:
   - **Local Root CA & Server Certificate Generator (`cert_service.py`)**: Automatically creates and manages 2048-bit RSA Root CA (`ca.crt`, `ca.key`) and server certificate (`server.crt`, `server.key`) with SAN for `*.googleapis.com`, `cloudcode-pa.googleapis.com`, `daily-cloudcode-pa.googleapis.com`, and `127.0.0.1`.
   - **Universal CA Bundle (`ca_bundle.crt`)**: Combines local Root CA with macOS system certificates (`/etc/ssl/cert.pem`) into `ca_bundle.crt` to prevent Go `x509: certificate signed by unknown authority` errors on public endpoints (e.g., `lh3.googleusercontent.com`).

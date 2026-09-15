@@ -4,16 +4,18 @@ import json
 import sys
 from typing import Any, Dict
 
+from betteragy.mcp.checkpoint_db import CheckpointDB
 from betteragy.mcp.protocol import make_error_response, make_success_response, parse_request
 from betteragy.mcp.task_db import TaskDB
 from betteragy.mcp.todo_tools import TOOL_DEFINITIONS, execute_tool
 
 
 class TodoServer:
-    """MCP stdio server handling JSON-RPC requests."""
+    """MCP stdio server handling JSON-RPC requests for task tracking, quota, and checkpoints."""
 
-    def __init__(self, db: TaskDB | None = None) -> None:
+    def __init__(self, db: TaskDB | None = None, cp_db: CheckpointDB | None = None) -> None:
         self.db = db or TaskDB()
+        self.cp_db = cp_db or CheckpointDB(self.db.db_path)
         self.session_id: int | None = None
 
     def handle_request(self, req: Dict[str, Any]) -> Dict[str, Any] | None:
@@ -31,8 +33,8 @@ class TodoServer:
                 {
                     "supportedVersions": ["2026-07-28", "2025-11-25", "2024-11-05"],
                     "capabilities": {"tools": {"listChanged": False}},
-                    "serverInfo": {"name": "betteragy-todo", "version": "0.2.0"},
-                    "instructions": "Betteragy To-Do execution engine for deterministic task tracking.",
+                    "serverInfo": {"name": "betteragy-todo", "version": "0.3.0"},
+                    "instructions": "Betteragy Agent Control Suite: task tracking, quota intelligence, checkpoints, and delegation.",
                 },
             )
         elif method == "initialize":
@@ -42,8 +44,8 @@ class TodoServer:
                 {
                     "protocolVersion": client_version,
                     "capabilities": {"tools": {"listChanged": False}},
-                    "serverInfo": {"name": "betteragy-todo", "version": "0.2.0"},
-                    "instructions": "Betteragy To-Do execution engine for deterministic task tracking.",
+                    "serverInfo": {"name": "betteragy-todo", "version": "0.3.0"},
+                    "instructions": "Betteragy Agent Control Suite: task tracking, quota intelligence, checkpoints, and delegation.",
                 },
             )
         elif method == "tools/list":
@@ -61,7 +63,7 @@ class TodoServer:
                 args = dict(args)
                 args["session_id"] = self.session_id
             try:
-                result = execute_tool(name, args, self.db)
+                result = execute_tool(name, args, self.db, self.cp_db)
                 if name == "todo_init" and "session_id" in result:
                     self.session_id = result["session_id"]
                 return make_success_response(req_id, result)

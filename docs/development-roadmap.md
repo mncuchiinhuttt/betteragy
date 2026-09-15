@@ -37,6 +37,10 @@
 - [x] True-Green Quota Progress Bar Grading (`theme.py`, `tables.py`) with 24-bit TrueColor hex color coding (`#16a34a` / `#22c55e`), eliminating terminal ANSI 32 cyan/teal mangling.
 - [x] Interactive Theme Selector Screen (`[*] Color Themes`) in TUI with live progress bar preview and instant persistence in `~/.config/betteragy/accounts.json`.
 - [x] First-Run Onboarding Flow & Auto-Setup Wizard (`onboarding_service.py`, `onboarding_wizard.py`) with 5-step guided setup (Keychain discovery, reasoning harness, MCP server, shell alias, system diagnostics).
+- [x] Agent Quota Intelligence Suite (`quota_tools.py`): `quota_status`, `account_list`, and `account_switch` for agent-driven quota self-awareness and proactive 429 rotation.
+- [x] Persistent Task Checkpoints & Multi-Day Memory (`checkpoint_db.py`, `checkpoint_tools.py`): `checkpoint_save`, `checkpoint_resume`, and `checkpoint_list` with SQLite backing for long-running workflows.
+- [x] Subagent Task Delegation & Dependency Engine (`task_schema.py`, `task_db.py`, `tree_formatter.py`): `assigned_to` and `depends_on` attributes with dependency blocker detection and visual ASCII tree badges.
+- [x] Harness Autonomous Long-Running & Wake-Up Directives (`strict_harness.md`, `balanced_harness.md`): integration of `schedule` (one-shot timer & cron) and `/goal` for overnight autonomy.
 
 
 ## Phase 4: IDE Realtime Integration (Planned - v0.3.0 / v1.3.0)

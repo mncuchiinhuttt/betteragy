@@ -108,7 +108,8 @@ class TaskDB:
             return cur.rowcount > 0
 
     def add_task(
-        self, title: str, description: str = "", priority: str = "medium", session_id: Optional[int] = None
+        self, title: str, description: str = "", priority: str = "medium",
+        session_id: Optional[int] = None, assigned_to: str = "", depends_on: str = "",
     ) -> int:
         if session_id is None:
             active = self.get_active_session()
@@ -117,31 +118,36 @@ class TaskDB:
         now = _now_iso()
         with self._get_connection() as conn:
             cursor = conn.execute(
-                "INSERT INTO tasks (session_id, title, description, priority, status, evidence, created_at, updated_at) "
-                "VALUES (?, ?, ?, ?, 'pending', '', ?, ?)",
-                (session_id, title, description, priority.lower(), now, now),
+                "INSERT INTO tasks (session_id, title, description, priority, status, evidence, "
+                "assigned_to, depends_on, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, 'pending', '', ?, ?, ?, ?)",
+                (session_id, title, description, priority.lower(), assigned_to.strip(), depends_on.strip(), now, now),
             )
             conn.execute("UPDATE sessions SET updated_at = ? WHERE id = ?", (now, session_id))
             return cursor.lastrowid or 0
 
     def update_task(
-        self, task_id: int, status: str, evidence: str = "", description: Optional[str] = None
+        self, task_id: int, status: str, evidence: str = "", description: Optional[str] = None,
+        assigned_to: Optional[str] = None, depends_on: Optional[str] = None,
     ) -> bool:
         now = _now_iso()
-        valid_statuses = {"pending", "in_progress", "completed", "blocked"}
-        clean_status = status.lower().strip() if status.lower().strip() in valid_statuses else "pending"
+        valid = {"pending", "in_progress", "completed", "blocked"}
+        clean_status = status.lower().strip() if status.lower().strip() in valid else "pending"
 
         with self._get_connection() as conn:
-            if description:
-                cursor = conn.execute(
-                    "UPDATE tasks SET status = ?, evidence = ?, description = ?, updated_at = ? WHERE id = ?",
-                    (clean_status, evidence, description, now, task_id),
-                )
-            else:
-                cursor = conn.execute(
-                    "UPDATE tasks SET status = ?, evidence = ?, updated_at = ? WHERE id = ?",
-                    (clean_status, evidence, now, task_id),
-                )
+            updates = ["status = ?", "evidence = ?", "updated_at = ?"]
+            params: list[Any] = [clean_status, evidence, now]
+            if description is not None:
+                updates.append("description = ?")
+                params.append(description)
+            if assigned_to is not None:
+                updates.append("assigned_to = ?")
+                params.append(assigned_to.strip())
+            if depends_on is not None:
+                updates.append("depends_on = ?")
+                params.append(depends_on.strip())
+            params.append(task_id)
+            cursor = conn.execute(f"UPDATE tasks SET {', '.join(updates)} WHERE id = ?", params)
             conn.execute(
                 "UPDATE sessions SET updated_at = ? WHERE id = (SELECT session_id FROM tasks WHERE id = ?)",
                 (now, task_id),
