@@ -15,6 +15,7 @@ TOOL_DEFINITIONS = [
                 "goal": {"type": "string", "description": "The high-level objective to accomplish."},
                 "project_name": {"type": "string", "description": "Optional project or repo name."},
                 "working_dir": {"type": "string", "description": "Optional working directory path."},
+                "color": {"type": "boolean", "description": "Enable colored ANSI output."},
             },
             "required": ["goal"],
         },
@@ -122,7 +123,8 @@ def execute_tool(name: str, args: Dict[str, Any], db: TaskDB) -> Dict[str, Any]:
             project_name=args.get("project_name", ""),
             working_dir=args.get("working_dir", ""),
         )
-        text = f"Initialized task session #{session_id}: {args.get('goal')}"
+        tree = _get_tree(db, session_id, use_color)
+        text = f"Initialized task session #{session_id}: {args.get('goal')}\n\n{tree}"
         return {"content": [{"type": "text", "text": text}], "session_id": session_id}
 
     if name == "todo_add":

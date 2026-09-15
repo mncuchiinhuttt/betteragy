@@ -53,7 +53,17 @@ def test_format_tasks_ansi_color():
 def test_tool_live_tree_reporting(tmp_path):
     db_path = tmp_path / "test_tasks.db"
     db = TaskDB(db_path=db_path)
-    sid = db.init_session("Live Progress Session", "live-proj")
+
+    # Init session with color=True returns initial empty tree
+    res_init = execute_tool(
+        "todo_init",
+        {"goal": "Live Progress Session", "project_name": "live-proj", "color": True},
+        db,
+    )
+    assert "Initialized task session" in res_init["content"][0]["text"]
+    assert "No tasks scheduled" in res_init["content"][0]["text"]
+    assert "\033[1;36mTODO\033[0m" in res_init["content"][0]["text"]
+    sid = res_init["session_id"]
 
     # Add task with color=True
     res_add = execute_tool(
