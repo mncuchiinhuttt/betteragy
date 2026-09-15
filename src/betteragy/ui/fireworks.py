@@ -101,13 +101,15 @@ def render_fireworks_frame(
                 grid[iy][ix] = "^"
                 color_grid[iy][ix] = r.color
 
+    w = 60
+    border = f" +{'-' * w}+ "
     banner = [
-        " +------------------------------------------------------------+ ",
-        " |       [*]  AI MODEL QUOTA RESTORED! CELEBRATION  [*]       | ",
-        f" |        {title[:48]:^48}        | ",
-        " |         Gemini 3.1 Pro, Flash & Claude Ready!              | ",
-        " |          >> Press [ESC] or [q] to return to TUI <<         | ",
-        " +------------------------------------------------------------+ ",
+        border,
+        f" |{'[*]  AI MODEL QUOTA RESTORED! CELEBRATION  [*]':^{w}}| ",
+        f" |{title[:w-4]:^{w}}| ",
+        f" |{'Gemini & Claude Ready!':^{w}}| ",
+        f" |{">> Press [ESC] or [q] to return to TUI <<":^{w}}| ",
+        border,
     ]
     b_start_y = max(2, (height - len(banner)) // 2)
     b_w = len(banner[0])
@@ -120,7 +122,16 @@ def render_fireworks_frame(
                 gx = b_start_x + c_idx
                 if 0 <= gx < width:
                     grid[gy][gx] = ch
-                    color_grid[gy][gx] = "bold cyan" if r_idx == 4 else ("bold yellow" if r_idx in (1, 3) else "bold white")
+                    if ch in ("+", "-", "|"):
+                        color_grid[gy][gx] = "bold yellow"
+                    elif r_idx == 1:
+                        color_grid[gy][gx] = "bold yellow"
+                    elif r_idx == 3:
+                        color_grid[gy][gx] = "bold green"
+                    elif r_idx == 4:
+                        color_grid[gy][gx] = "bold cyan"
+                    else:
+                        color_grid[gy][gx] = "bold white"
 
     result = Text()
     for y in range(height):

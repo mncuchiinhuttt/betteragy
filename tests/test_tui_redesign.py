@@ -65,6 +65,7 @@ def test_render_fireworks_frame():
     )
     assert frame is not None
     assert "AI Quota Restored Celebration!" in frame.plain
+    assert "Gemini & Claude Ready!" in frame.plain
     assert ">> Press [ESC] or [q] to return to TUI <<" in frame.plain
 
 
