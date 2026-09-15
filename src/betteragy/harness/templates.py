@@ -7,9 +7,12 @@ RULES_DIR = Path(__file__).parent / "rules"
 FALLBACK_STRICT = """# Betteragy Elite Reasoning & Verification Harness
 
 ## Core Directives
-1. **Never Guess - Always Verify**: Run commands to prove facts before touching code.
-2. **Mandatory Task Planning**: Use `todo_init` and `todo_add` to decompose requests into subtasks.
-3. **Atomic Execution**: Focus on 1 task at a time; mark `in_progress` via `todo_update`.
+1. **Never Guess - Clarify & Verify**: If requirements are unclear or have choices, ask the user first. Run commands to prove facts.
+2. **Request Complexity Tiers**:
+   - Tier 1 (Simple/Atomic): 1-2 tasks max. Do NOT create bloated checklists.
+   - Tier 2 (Features): 2-4 tasks for logical milestones.
+   - Tier 3 (Complex): 4-6 tasks for multi-module epics.
+3. **Proportional Planning**: Use `todo_init` and `todo_add` matching the tier.
 4. **Verification Gates**: Run compilation checks and unit tests before marking `completed`.
 5. **Code Standards**: Keep files under 200 lines, use kebab-case, follow YAGNI/KISS/DRY.
 """
@@ -17,10 +20,11 @@ FALLBACK_STRICT = """# Betteragy Elite Reasoning & Verification Harness
 FALLBACK_BALANCED = """# Betteragy Balanced Reasoning Harness
 
 ## Directives
-1. **Plan First**: Call `todo_add` to break requests into logical milestones.
-2. **Verify Code**: Always check syntax and compile code after making changes.
-3. **Maintain Task Status**: Update task status with `todo_update` as you make progress.
-4. **Concise Quality**: Write clean code, keep files under 200 lines.
+1. **Request Tiers**: Tier 1 (1-2 tasks), Tier 2 (2-4 tasks), Tier 3 (4-6 tasks).
+2. **Clarify Unclear Points**: Ask targeted follow-up questions when requirements have multiple options.
+3. **Plan Proportionally**: Call `todo_init` and `todo_add` without unnecessary task bureaucracy.
+4. **Verify Code**: Always check syntax and run tests after modifications.
+5. **Concise Quality**: Write clean code, keep files under 200 lines.
 """
 
 
