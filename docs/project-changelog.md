@@ -16,7 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Zero-Manual-Export Shell Environment Auto-Config (`auto_config.py`, `daemon.py`)**: Automatically injects bounded shell functions `agy()` and `antigravity()` into `~/.zshrc` on proxy start, and cleanly reverts the configuration on stop. When stopped, shell functions immediately bypass proxy if `proxy.pid` is absent.
   - **Daemon Process Control (`proxy/daemon.py`, `commands/proxy_cmd.py`)**: Background process manager supporting `betteragy proxy start`, `stop`, `status`, and `run` with PID tracking, health probing, and logging.
   - **Auto-Rotation Proxy TUI Screen & Live Badge (`proxy_flows.py`, `interactive_renderer.py`, `interactive_tui.py`)**: Added `[*] Auto-Rotation Proxy` menu item, active proxy status badge in the header (`[ok] Active (45124)`), and dedicated control panel to toggle proxy daemon with `p`.
-  - **Comprehensive Unit & Integration Test Suite (`test_cert_service.py`, `test_proxy.py`, `test_proxy_tui.py`, `test_auto_config.py`)**: Full automated test coverage for CA generation, health probing, token swapping, 429 auto-rotation retries, stream framing, and shell auto-config (70/70 tests passing).
+  - **Visual Progress Bar for AI Model Quotas (`theme.py`, `tables.py`, `test_quota.py`)**:
+    - Implemented single-width ASCII progress bar `[=======.......]  47%` rendered directly next to the remaining percentage in both single-account and multi-account quota views.
+    - Resolved Rich markup parser conflict where `[#...]` was mistakenly parsed as a hex color style tag and suppressed; correctly escaped brackets and styled filled bars (`=`) and dimmed empty dots (`.`) with threshold color grading (green >= 50%, yellow >= 20%, red < 20%).
+  - **Comprehensive Unit & Integration Test Suite (`test_cert_service.py`, `test_proxy.py`, `test_proxy_tui.py`, `test_auto_config.py`, `test_quota.py`)**: Full automated test coverage for CA generation, health probing, token swapping, 429 auto-rotation retries, stream framing, shell auto-config, and quota progress bars (71/71 tests passing).
 
 ## [1.1.0] - 2026-09-14
 

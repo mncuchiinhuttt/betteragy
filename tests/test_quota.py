@@ -30,3 +30,40 @@ def test_format_reset_time():
 
     # Empty
     assert format_reset_time("") == ("", "")
+
+
+def test_render_progress_bar():
+    """Verify render_progress_bar creates single-width ASCII bar and Rich console doesn't strip it."""
+    from rich.console import Console
+    from betteragy.ui.theme import render_progress_bar
+
+    console = Console(record=True, width=80)
+
+    # 100% (green, all '=')
+    bar_100 = render_progress_bar(100, width=10)
+    assert "100%" in bar_100
+    assert "==========" in bar_100
+    console.print(bar_100)
+    out_100 = console.export_text()
+    assert "[==========] 100%" in out_100
+
+    # 50% (green, 5 '=', 5 '.')
+    bar_50 = render_progress_bar(50, width=10)
+    assert "50%" in bar_50
+    assert "=====" in bar_50
+    assert "....." in bar_50
+
+    # 28% (yellow, 3 '=', 7 '.')
+    bar_28 = render_progress_bar(28, width=10)
+    assert "28%" in bar_28
+    assert "yellow" in bar_28
+
+    # 0% (red, 0 '=', 10 '.')
+    bar_0 = render_progress_bar(0, width=10)
+    assert "0%" in bar_0
+    assert "red" in bar_0
+    assert ".........." in bar_0
+
+    # Clamping tests (< 0 and > 100)
+    assert "0%" in render_progress_bar(-10)
+    assert "100%" in render_progress_bar(150)

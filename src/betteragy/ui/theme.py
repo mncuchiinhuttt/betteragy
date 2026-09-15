@@ -17,11 +17,12 @@ BETTERAGY_THEME = Theme({
 })
 
 
-def render_progress_bar(percentage: int, width: int = 14) -> str:
-    """Render a colored ASCII progress bar with threshold color grading."""
-    pct = max(0, min(100, percentage))
-    filled_len = int(round((pct / 100.0) * width))
-    empty_len = width - filled_len
+def render_progress_bar(percentage: float | int, width: int = 14) -> str:
+    """Render a colored ASCII progress bar next to percentage remaining."""
+    w = max(1, width)
+    pct = max(0, min(100, int(round(percentage))))
+    filled_len = int(round((pct / 100.0) * w))
+    empty_len = w - filled_len
 
     if pct >= 50:
         color = "green"
@@ -30,8 +31,17 @@ def render_progress_bar(percentage: int, width: int = 14) -> str:
     else:
         color = "red"
 
-    bar = "#" * filled_len + "-" * empty_len
-    return f"[{color}][{bar}][/{color}] {pct:>3}%"
+    filled_str = "=" * filled_len
+    empty_str = "." * empty_len
+
+    if filled_len == 0:
+        bar = f"[dim red]\\[{empty_str}][/dim red]"
+    elif empty_len == 0:
+        bar = f"[{color}]\\[{filled_str}][/{color}]"
+    else:
+        bar = f"[{color}]\\[{filled_str}[/{color}][dim]{empty_str}][/dim]"
+
+    return f"{bar} [bold {color}]{pct:>3}%[/bold {color}]"
 
 
 def format_tokens(num: int) -> str:
