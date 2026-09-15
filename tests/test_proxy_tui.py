@@ -31,7 +31,7 @@ def test_render_proxy_panel_stopped():
         assert panel is not None
         rendered = _render_to_text(panel)
         assert "STOPPED" in rendered
-        assert "Zero-Restart Switching" in rendered
+        assert "Auto-Rotation" in rendered
 
 
 def test_render_proxy_panel_running():
@@ -82,9 +82,9 @@ def test_handle_proxy_key_navigation_and_toggle():
 
 
 def test_tui_main_menu_enter_proxy_screen():
-    """Verify Enter on 'Zero-Restart Proxy' opens proxy screen."""
+    """Verify Enter on 'Auto-Rotation Proxy' opens proxy screen."""
     tui = InteractiveTUI()
-    proxy_idx = next(i for i, item in enumerate(MAIN_MENU_ITEMS) if "Zero-Restart Proxy" in item[0])
+    proxy_idx = next(i for i, item in enumerate(MAIN_MENU_ITEMS) if "Auto-Rotation Proxy" in item[0])
     tui.menu_idx = proxy_idx
     should_exit = tui._dispatch_action(MAIN_MENU_ITEMS[proxy_idx][0])
     assert should_exit is False

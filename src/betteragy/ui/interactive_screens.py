@@ -20,7 +20,7 @@ MAIN_MENU_ITEMS = [
     ("[-] Remove Account", "Delete an account from your local switchboard pool"),
     ("[*] Tasks & Planning", "View active agy task board and verification progress"),
     ("[^] Thinking Harness", "View deep reasoning harness rules and status"),
-    ("[*] Zero-Restart Proxy", "Toggle and inspect local proxy with 429 auto-rotation"),
+    ("[*] Auto-Rotation Proxy", "Transparent proxy with 429 auto-rotation & live switching"),
     ("[>] Shell Integration", "View bash/zsh wrapper function and aliases for agy"),
     ("[?] Check for Updates", "Check GitHub releases for latest updates"),
     ("[x] Exit", "Exit Betteragy and return to shell"),

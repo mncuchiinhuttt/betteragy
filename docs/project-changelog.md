@@ -8,14 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2026-09-15
 
 ### Added
-- **Transparent Local MITM Proxy & Zero-Restart Account Switching**:
+- **Transparent Local MITM Proxy & Auto-Rotation Subsystem**:
   - **Local Root CA & Server Certificate Generator (`cert_service.py`)**: Automatically creates and manages 2048-bit RSA Root CA (`ca.crt`, `ca.key`) and server certificate (`server.crt`, `server.key`) with SAN for `*.googleapis.com`, `cloudcode-pa.googleapis.com`, `daily-cloudcode-pa.googleapis.com`, and `127.0.0.1`.
-  - **Asynchronous Proxy Server (`proxy/server.py`)**: Asyncio TCP server supporting HTTP `CONNECT` tunneling, TLS MITM interception for Google Cloud Code Assist domains, raw bidirectional TCP tunneling for third-party traffic, and `/health` probe endpoints.
+  - **Universal CA Bundle (`ca_bundle.crt`)**: Combines local Root CA with macOS system certificates (`/etc/ssl/cert.pem`) into `ca_bundle.crt` to prevent Go `x509: certificate signed by unknown authority` errors on public endpoints (e.g., `lh3.googleusercontent.com`).
+  - **Robust HTTP/1.1 Stream & Chunked Framing (`stream_utils.py`)**: Implements `stream_chunked_response`, `stream_fixed_response`, and `read_chunked_payload` to resolve EOF errors on keep-alive connections to `loadCodeAssist`.
   - **Dynamic Token Interceptor & Auto-Rotation (`proxy/interceptor.py`)**: Intercepts decrypted HTTP streams from `agy`, dynamically injects valid Bearer tokens from Betteragy's active account (`ensure_valid_access_token()`), intercepts HTTP 429 quota exhaustion errors, puts the exhausted account on a 4-hour cooldown, triggers automatic rotation (`RotationService.rotate()`), and transparently retries upstream with the new account's token so `agy` never encounters rate limits or errors.
+  - **Zero-Manual-Export Shell Environment Auto-Config (`auto_config.py`, `daemon.py`)**: Automatically injects bounded shell functions `agy()` and `antigravity()` into `~/.zshrc` on proxy start, and cleanly reverts the configuration on stop. When stopped, shell functions immediately bypass proxy if `proxy.pid` is absent.
   - **Daemon Process Control (`proxy/daemon.py`, `commands/proxy_cmd.py`)**: Background process manager supporting `betteragy proxy start`, `stop`, `status`, and `run` with PID tracking, health probing, and logging.
-  - **Shell & Agent Wrapper Integration (`shell_cmd.py`, `agent_cmd.py`)**: Updated `agy()` shell function and `betteragy agent` launcher to export `HTTPS_PROXY=http://127.0.0.1:45124` and `SSL_CERT_FILE=~/.config/betteragy/certs/ca.crt` automatically when proxy is running.
-  - **Interactive TUI Proxy Screen & Live Badge (`proxy_flows.py`, `interactive_renderer.py`, `interactive_tui.py`)**: Added `[*] Zero-Restart Proxy` menu item, active proxy status badge in the header (`[ok] Active (45124)`), and dedicated control panel to toggle proxy daemon with `p`.
-  - **Comprehensive Unit & Integration Test Suite (`test_cert_service.py`, `test_proxy.py`, `test_proxy_tui.py`)**: Added full automated test coverage for CA generation, health probing, token swapping, 429 auto-rotation retries, and TUI proxy interactions (68/68 tests passing).
+  - **Auto-Rotation Proxy TUI Screen & Live Badge (`proxy_flows.py`, `interactive_renderer.py`, `interactive_tui.py`)**: Added `[*] Auto-Rotation Proxy` menu item, active proxy status badge in the header (`[ok] Active (45124)`), and dedicated control panel to toggle proxy daemon with `p`.
+  - **Comprehensive Unit & Integration Test Suite (`test_cert_service.py`, `test_proxy.py`, `test_proxy_tui.py`, `test_auto_config.py`)**: Full automated test coverage for CA generation, health probing, token swapping, 429 auto-rotation retries, stream framing, and shell auto-config (70/70 tests passing).
 
 ## [1.1.0] - 2026-09-14
 

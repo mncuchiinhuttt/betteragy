@@ -7,6 +7,7 @@ from typing import Optional
 
 from ..services.cert_service import CertService
 from .interceptor import ProxyInterceptor
+from .stream_utils import read_chunked_payload
 
 logger = logging.getLogger("betteragy.proxy")
 DEFAULT_PROXY_HOST = "127.0.0.1"
@@ -23,8 +24,7 @@ class BetteragyProxyServer:
         interceptor: Optional[ProxyInterceptor] = None,
         cert_service: Optional[CertService] = None,
     ):
-        self.host = host
-        self.port = port
+        self.host, self.port = host, port
         self.interceptor = interceptor or ProxyInterceptor()
         self.cert_service = cert_service or CertService()
         self.ssl_ctx: Optional[ssl.SSLContext] = None
@@ -57,13 +57,11 @@ class BetteragyProxyServer:
             if not req_line_bytes:
                 writer.close()
                 return
-
             req_line = req_line_bytes.decode("utf-8", errors="replace").strip()
             parts = req_line.split()
             if not parts:
                 writer.close()
                 return
-
             method = parts[0].upper()
             if method == "CONNECT":
                 await self._handle_connect(parts[1], reader, writer)
@@ -83,7 +81,6 @@ class BetteragyProxyServer:
             line = await reader.readline()
             if not line or line == b"\r\n":
                 break
-
         if path in ("/health", "/status"):
             active = self.interceptor.account_service.get_active_account()
             email = active.email if active else "none"
@@ -102,35 +99,23 @@ class BetteragyProxyServer:
             line = await reader.readline()
             if not line or line == b"\r\n":
                 break
-
         host, port_str = target.split(":", 1) if ":" in target else (target, "443")
         port = int(port_str)
-
-        # Confirm tunnel to client
         writer.write(b"HTTP/1.1 200 Connection Established\r\n\r\n")
         await writer.drain()
 
-        # If targeting Google APIs, terminate TLS and intercept
         if host.endswith(".googleapis.com"):
             loop = asyncio.get_running_loop()
             tls_reader = asyncio.StreamReader()
             protocol = asyncio.StreamReaderProtocol(tls_reader)
-
-            tls_transport = await loop.start_tls(
-                writer.transport,
-                protocol=protocol,
-                sslcontext=self.ssl_ctx,
-                server_side=True,
-            )
+            tls_transport = await loop.start_tls(writer.transport, protocol=protocol, sslcontext=self.ssl_ctx, server_side=True)
             tls_writer = asyncio.StreamWriter(tls_transport, protocol, tls_reader, loop)
-
             try:
                 await self._process_tls_requests(tls_reader, tls_writer, host, port)
             finally:
                 if not tls_writer.is_closing():
                     tls_writer.close()
         else:
-            # Forward raw TCP stream for other hosts
             await self._tunnel_raw_tcp(host, port, reader, writer)
 
     async def _process_tls_requests(
@@ -145,10 +130,8 @@ class BetteragyProxyServer:
             parts = req_line.split()
             if len(parts) < 2:
                 break
-
             method, path = parts[0], parts[1]
-            headers = {}
-            content_length = 0
+            headers, content_length, is_chunked = {}, 0, False
 
             while True:
                 line = await reader.readline()
@@ -157,14 +140,21 @@ class BetteragyProxyServer:
                 header_text = line.decode("utf-8", errors="replace").strip()
                 if ":" in header_text:
                     k, v = header_text.split(":", 1)
+                    k_lower = k.strip().lower()
                     headers[k.strip()] = v.strip()
-                    if k.strip().lower() == "content-length":
+                    if k_lower == "content-length":
                         content_length = int(v.strip())
+                    elif k_lower == "transfer-encoding" and "chunked" in v.strip().lower():
+                        is_chunked = True
 
-            body = await reader.readexactly(content_length) if content_length > 0 else b""
+            if is_chunked:
+                body = await read_chunked_payload(reader)
+            elif content_length > 0:
+                body = await reader.readexactly(content_length)
+            else:
+                body = b""
+
             await self.interceptor.forward_request(method, path, headers, body, host, port, writer)
-
-            # Close connection if Connection: close
             if headers.get("connection", "").lower() == "close":
                 break
 

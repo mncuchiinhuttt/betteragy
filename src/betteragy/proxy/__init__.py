@@ -1,4 +1,4 @@
-"""Betteragy Transparent Proxy package for zero-restart account switching & auto-rotation."""
+"""Betteragy Auto-Rotation Proxy package for transparent account switching & 429 rotation."""
 
 from .interceptor import ProxyInterceptor
 from .server import BetteragyProxyServer

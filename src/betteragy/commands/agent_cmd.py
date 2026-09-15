@@ -16,10 +16,12 @@ console = Console()
 
 def _get_agent_env() -> dict:
     env = os.environ.copy()
-    pid_file = Path.home() / ".config" / "betteragy" / "proxy.pid"
-    ca_file = Path.home() / ".config" / "betteragy" / "certs" / "ca.crt"
-    if pid_file.exists() and ca_file.exists():
-        env["HTTPS_PROXY"] = "http://127.0.0.1:45124"
+    from ..proxy.daemon import is_proxy_running
+    from ..proxy.server import DEFAULT_PROXY_HOST, DEFAULT_PROXY_PORT
+    from ..services.cert_service import CertService
+    if is_proxy_running():
+        ca_file = CertService().get_ca_cert_path()
+        env["HTTPS_PROXY"] = f"http://{DEFAULT_PROXY_HOST}:{DEFAULT_PROXY_PORT}"
         env["SSL_CERT_FILE"] = str(ca_file)
     return env
 

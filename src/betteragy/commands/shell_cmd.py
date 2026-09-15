@@ -4,6 +4,7 @@ import typer
 from rich.console import Console
 from rich.syntax import Syntax
 
+from ..proxy.server import DEFAULT_PROXY_HOST, DEFAULT_PROXY_PORT
 from ..ui.theme import BETTERAGY_THEME
 
 console = Console(theme=BETTERAGY_THEME)
@@ -11,10 +12,10 @@ console = Console(theme=BETTERAGY_THEME)
 SHELL_SNIPPET = """# Betteragy Shell Integration for Antigravity
 # Add the following lines to your ~/.zshrc or ~/.bashrc:
 
-# Wrapper to run agy seamlessly with zero-restart auto-rotation proxy
+# Wrapper to run agy seamlessly with Auto-Rotation Proxy
 agy() {
     if [ -f "$HOME/.config/betteragy/proxy.pid" ]; then
-        HTTPS_PROXY="http://127.0.0.1:45124" SSL_CERT_FILE="$HOME/.config/betteragy/certs/ca.crt" command agy "$@"
+        HTTPS_PROXY="http://__HOST__:__PORT__" SSL_CERT_FILE="$HOME/.config/betteragy/certs/ca_bundle.crt" command agy "$@"
     else
         betteragy account rotate > /dev/null 2>&1
         command agy "$@"
@@ -30,7 +31,7 @@ agycool() {
 alias agydash="betteragy dashboard"
 alias agyquota="betteragy quota"
 alias agyusage="betteragy usage"
-"""
+""".replace("__HOST__", DEFAULT_PROXY_HOST).replace("__PORT__", str(DEFAULT_PROXY_PORT))
 
 
 def shell_integration_command():

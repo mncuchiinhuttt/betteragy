@@ -7,6 +7,7 @@ from typing import Dict, Optional
 
 from ..services.account_service import AccountService
 from ..services.rotation_service import RotationService
+from .stream_utils import read_chunked_payload, stream_chunked_response, stream_fixed_response
 
 logger = logging.getLogger("betteragy.proxy")
 
@@ -36,12 +37,22 @@ class ProxyInterceptor:
         max_retries = 3
         attempt = 0
 
-        # Strip hop-by-hop and connection headers
+        # Strip hop-by-hop headers; compute Content-Length since body is buffered
         cleaned_headers = {
             k: v for k, v in headers.items()
-            if k.lower() not in ("connection", "keep-alive", "proxy-authenticate", "proxy-authorization")
+            if k.lower() not in (
+                "connection",
+                "keep-alive",
+                "proxy-authenticate",
+                "proxy-authorization",
+                "transfer-encoding",
+                "content-length",
+            )
         }
         cleaned_headers["Host"] = upstream_host
+        cleaned_headers["Connection"] = "close"
+        if method.upper() in ("POST", "PUT", "PATCH") or len(body) > 0:
+            cleaned_headers["Content-Length"] = str(len(body))
 
         while attempt < max_retries:
             attempt += 1
@@ -54,7 +65,6 @@ class ProxyInterceptor:
                 except Exception as e:
                     logger.warning("[Proxy] [!] Failed to refresh token for %s: %s", active_acc.email, e)
 
-            # Connect to upstream Google server
             upstream_reader = None
             upstream_writer = None
             try:
@@ -99,17 +109,15 @@ class ProxyInterceptor:
                     if content_length is not None:
                         error_payload = await upstream_reader.readexactly(content_length)
                     elif is_chunked:
-                        error_payload = await self._read_chunked_body(upstream_reader)
+                        error_payload = await read_chunked_payload(upstream_reader)
 
                     logger.warning(
                         "[Proxy] [!] 429 Quota Exceeded on %s. Auto-rotating to next account...",
                         active_acc.email,
                     )
-                    # Close upstream connection before retry
                     upstream_writer.close()
                     await upstream_writer.wait_closed()
 
-                    # Put exhausted account on 4h cooldown and rotate to next healthy account
                     ok, rot_msg = self.rotation_service.set_cooldown(hours=4.0)
                     if not ok:
                         logger.error("[Proxy] [x] All accounts exhausted: %s", rot_msg)
@@ -122,12 +130,20 @@ class ProxyInterceptor:
                 client_writer.write(status_line + b"".join(resp_headers_lines) + b"\r\n")
                 await client_writer.drain()
 
-                while True:
-                    chunk = await upstream_reader.read(16384)
-                    if not chunk:
-                        break
-                    client_writer.write(chunk)
-                    await client_writer.drain()
+                # Stream body based on HTTP framing to prevent hanging
+                if status_code in (204, 304) or (100 <= status_code < 200):
+                    pass
+                elif is_chunked:
+                    await stream_chunked_response(upstream_reader, client_writer)
+                elif content_length is not None:
+                    await stream_fixed_response(upstream_reader, client_writer, content_length)
+                else:
+                    while True:
+                        chunk = await upstream_reader.read(16384)
+                        if not chunk:
+                            break
+                        client_writer.write(chunk)
+                        await client_writer.drain()
 
                 return
 
@@ -146,20 +162,3 @@ class ProxyInterceptor:
             finally:
                 if upstream_writer and not upstream_writer.is_closing():
                     upstream_writer.close()
-
-    async def _read_chunked_body(self, reader: asyncio.StreamReader) -> bytes:
-        """Read full chunked HTTP body until end chunk."""
-        chunks = []
-        while True:
-            size_line = await reader.readline()
-            if not size_line:
-                break
-            size_str = size_line.split(b";")[0].strip()
-            chunk_size = int(size_str, 16)
-            if chunk_size == 0:
-                await reader.readline()  # read trailing CRLF
-                break
-            chunk_data = await reader.readexactly(chunk_size)
-            await reader.readline()  # read CRLF
-            chunks.append(chunk_data)
-        return b"".join(chunks)

@@ -47,8 +47,9 @@ def test_server_ssl_context(tmp_path: Path):
 
 
 def test_ca_cert_path(tmp_path: Path):
-    """Test retrieving the CA certificate path."""
+    """Test retrieving the CA certificate bundle path."""
     service = CertService(certs_dir=tmp_path)
     ca_path = service.get_ca_cert_path()
-    assert ca_path == tmp_path / "ca.crt"
+    assert ca_path == tmp_path / "ca_bundle.crt"
     assert ca_path.exists()
+    assert service.ca_crt.exists()

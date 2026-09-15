@@ -51,8 +51,11 @@ def start_proxy_daemon(
     timeout_secs: float = 3.0,
 ) -> tuple[bool, int, str]:
     """Spawn background proxy daemon. Returns (success, pid, message)."""
+    from .auto_config import install_auto_config
+
     pid = get_proxy_pid()
     if pid and is_healthy(host, port):
+        install_auto_config(host=host, port=port)
         return True, pid, f"Proxy is already running (PID: {pid}) on http://{host}:{port}"
 
     cmd = [sys.executable, "-m", "betteragy.cli", "proxy", "run", "--host", host, "--port", str(port)]
@@ -68,13 +71,17 @@ def start_proxy_daemon(
     while time.time() < deadline:
         time.sleep(0.15)
         if is_healthy(host, port):
+            install_auto_config(host=host, port=port)
             return True, proc.pid, f"Proxy started on http://{host}:{port}"
 
     return False, proc.pid, f"Proxy started (PID: {proc.pid}) but health probe timed out"
 
 
 def stop_proxy_daemon() -> bool:
-    """Stop running proxy daemon. Returns True if stopped."""
+    """Stop running proxy daemon and revert shell auto-config. Returns True if stopped."""
+    from .auto_config import remove_auto_config
+
+    remove_auto_config()
     pid = get_proxy_pid()
     if not pid:
         PID_FILE.unlink(missing_ok=True)

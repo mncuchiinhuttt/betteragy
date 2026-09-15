@@ -29,7 +29,8 @@
 - [x] Asyncio TCP/TLS MITM Proxy Server (`proxy/server.py`) handling HTTP `CONNECT` tunnels and TLS termination.
 - [x] Dynamic Token Swapper & 429 Interceptor (`proxy/interceptor.py`): swaps Bearer tokens on the fly and auto-rotates + retries on HTTP 429 quota exhaustion.
 - [x] Background Daemon Process Control (`proxy/daemon.py`, `commands/proxy_cmd.py`).
-- [x] Zero-Restart Shell & Agent Integration (`shell_cmd.py`, `agent_cmd.py` exporting `HTTPS_PROXY` and `SSL_CERT_FILE`).
+- [x] Auto-Rotation Proxy & Zero-Manual-Config Shell Integration (`auto_config.py`, `shell_cmd.py`, `agent_cmd.py` with automatic `~/.zshrc` hook and revert).
+- [x] Stream Framing & Chunked Transfer Decoder (`stream_utils.py`) resolving EOF on Keep-Alive Google Cloud Code Assist connections.
 - [x] Interactive TUI Proxy Screen & Live Badge (`proxy_flows.py`, `interactive_renderer.py`, `interactive_tui.py`).
 
 ## Phase 4: IDE Realtime Integration (Planned - v0.3.0 / v1.3.0)

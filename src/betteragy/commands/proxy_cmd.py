@@ -19,7 +19,7 @@ from ..proxy.server import DEFAULT_PROXY_HOST, DEFAULT_PROXY_PORT, BetteragyProx
 from ..services.cert_service import DEFAULT_CERTS_DIR
 from ..ui.theme import BETTERAGY_THEME
 
-proxy_app = typer.Typer(help="Manage local zero-restart proxy with auto-rotation on quota exhaustion.")
+proxy_app = typer.Typer(help="Manage local auto-rotation proxy with automatic 429 quota rotation.")
 console = Console(theme=BETTERAGY_THEME)
 
 
@@ -29,7 +29,7 @@ def start_proxy(
     port: int = typer.Option(DEFAULT_PROXY_PORT, "--port", "-p", help="Port number"),
     foreground: bool = typer.Option(False, "--foreground", "-f", help="Run in foreground"),
 ) -> None:
-    """Start local proxy daemon for zero-restart switching & auto-rotation."""
+    """Start local proxy daemon for auto-rotation & live account switching."""
     if foreground:
         server = BetteragyProxyServer(host=host, port=port)
         PID_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -41,20 +41,21 @@ def start_proxy(
         return
 
     success, pid, msg = start_proxy_daemon(host, port)
-    ca_path = DEFAULT_CERTS_DIR / "ca.crt"
+    from ..services.cert_service import CertService
+    ca_path = CertService().get_ca_cert_path()
 
     if success:
         console.print(
             Panel(
-                f"[bold green][ok] Betteragy proxy started successfully![/bold green]\n\n"
+                f"[bold green][ok] Betteragy Auto-Rotation Proxy started successfully![/bold green]\n\n"
                 f"[dim]PID:[/] [cyan]{pid}[/cyan]  |  [dim]Listening:[/] [cyan]http://{host}:{port}[/cyan]\n"
-                f"[dim]Auto-Rotation:[/] [bold yellow]Enabled (Catches HTTP 429 quota exhaustion)[/bold yellow]\n"
-                f"[dim]Zero-Restart Switching:[/] [bold green]Active[/bold green]\n\n"
-                f"[bold white]To run agy through the proxy:[/bold white]\n"
+                f"[dim]Auto-Rotation:[/] [bold yellow]Active (Catches HTTP 429 quota exhaustion)[/bold yellow]\n"
+                f"[dim]Auto-Config:[/] [bold green]Active (Shell routes agy automatically)[/bold green]\n\n"
+                f"[bold white]Simply run [cyan]agy[/cyan] in any terminal window![/bold white]\n"
+                f"[dim]Manual fallback env (if not using shell integration):[/dim]\n"
                 f"  [cyan]export HTTPS_PROXY=http://{host}:{port}[/cyan]\n"
-                f"  [cyan]export SSL_CERT_FILE={ca_path}[/cyan]\n"
-                f"  [cyan]agy[/cyan]",
-                title="[~] Betteragy Transparent Proxy",
+                f"  [cyan]export SSL_CERT_FILE={ca_path}[/cyan]",
+                title="[~] Betteragy Auto-Rotation Proxy",
                 border_style="green",
             )
         )
@@ -80,7 +81,8 @@ def status_proxy(
     """Inspect proxy daemon running status and active account."""
     pid = get_proxy_pid()
     healthy = is_healthy(host, port)
-    ca_path = DEFAULT_CERTS_DIR / "ca.crt"
+    from ..services.cert_service import CertService
+    ca_path = CertService().get_ca_cert_path()
 
     if pid and healthy:
         body = (
@@ -97,12 +99,12 @@ def status_proxy(
     else:
         body = (
             "[bold yellow][!] Proxy Daemon is STOPPED[/bold yellow]\n\n"
-            "[dim]To start the zero-restart proxy with auto-rotation:[/dim]\n"
+            "[dim]To start the auto-rotation proxy:[/dim]\n"
             "  [cyan]betteragy proxy start[/cyan]"
         )
         border = "yellow"
 
-    console.print(Panel(body, title="[~] Betteragy Proxy Status", border_style=border))
+    console.print(Panel(body, title="[~] Betteragy Auto-Rotation Proxy Status", border_style=border))
 
 
 @proxy_app.command("run", hidden=True)
@@ -111,5 +113,10 @@ def run_proxy(
     port: int = typer.Option(DEFAULT_PROXY_PORT, "--port", "-p"),
 ) -> None:
     """Internal entrypoint for background daemon."""
+    import logging
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
     server = BetteragyProxyServer(host=host, port=port)
     asyncio.run(server.serve_forever())
