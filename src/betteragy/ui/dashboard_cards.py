@@ -1,11 +1,11 @@
-"""Dashboard status cards and mini quota widgets for the redesigned command center."""
-
-from typing import Optional
+import re
+from typing import List, Optional
+from rich.console import Group
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from ..core.models import AccountQuota, AccountRecord
+from ..core.models import AccountQuota, AccountRecord, QuotaBucket
 from .theme import DEFAULT_BOX, format_status_badge, render_progress_bar
 from .theme_manager import get_theme_manager
 
@@ -44,13 +44,46 @@ def render_active_overview_card(
     )
 
 
+def filter_flagship_buckets(buckets: List[QuotaBucket], limit: int = 4) -> List[QuotaBucket]:
+    """Select Claude and the newest Gemini (3.8+) flagship models for snapshot display."""
+    claude_b = [b for b in buckets if "claude" in (b.display_name or b.model_id).lower()]
+    gemini_b = [b for b in buckets if "gemini" in (b.display_name or b.model_id).lower()]
+
+    claude_b.sort(key=lambda b: (0 if "sonnet" in (b.display_name or "").lower() else 1, b.display_name))
+
+    def gemini_rank(b: QuotaBucket):
+        name = (b.display_name or b.model_id).lower()
+        match = re.search(r"(\d+(?:\.\d+)?)", name)
+        ver = float(match.group(1)) if match else 0.0
+        tier = 0 if "high" in name else (1 if "medium" in name else (2 if "tiered" in name else 3))
+        return (-ver, tier, name)
+
+    gemini_b.sort(key=gemini_rank)
+
+    selected = claude_b[:2] + gemini_b[:2]
+    if len(selected) < limit:
+        for b in claude_b[2:] + gemini_b[2:] + buckets:
+            if b not in selected:
+                selected.append(b)
+            if len(selected) >= limit:
+                break
+    return selected[:limit]
+
+
+def format_model_label(name: str) -> str:
+    """Clean model display name for concise table columns."""
+    s = name.replace(" (Thinking)", "").strip()
+    s = s.replace("Flash (High)", "Flash High").replace("Flash (Medium)", "Flash Med").replace("Flash (Low)", "Flash Low")
+    return s[:22]
+
+
 def render_mini_quota_card(cached_quota: Optional[AccountQuota]) -> Panel:
     """Render compact real-time model quota bars directly on the dashboard."""
     th = get_theme_manager().get_active_theme()
     table = Table(box=None, show_header=False, pad_edge=False, padding=(0, 1))
-    table.add_column("Model", style="bold white", width=20)
-    table.add_column("Bar", width=22)
-    table.add_column("Reset", style=th.dim_style, width=12)
+    table.add_column("Model", style="bold white", width=22)
+    table.add_column("Bar", width=20)
+    table.add_column("Reset", style=th.dim_style, width=11)
 
     if not cached_quota or not cached_quota.buckets:
         msg = Text("  Live quota not cached.\n  Press [2] to refresh model limits.", style=th.dim_style)
@@ -61,17 +94,16 @@ def render_mini_quota_card(cached_quota: Optional[AccountQuota]) -> Panel:
             box=DEFAULT_BOX,
         )
 
-    # Show up to 4 key models
-    display_buckets = cached_quota.buckets[:4]
+    # Show flagship Claude and Gemini 3.8+ models
+    display_buckets = filter_flagship_buckets(cached_quota.buckets, limit=4)
     for b in display_buckets:
         pct = int(b.percentage)
-        bar = render_progress_bar(pct, width=12)
+        bar = render_progress_bar(pct, width=10)
         reset_str = b.reset_countdown or "Ready"
-        m_name = (b.display_name or b.model_id)[:18]
+        m_name = format_model_label(b.display_name or b.model_id)
         table.add_row(m_name, bar, reset_str)
 
     footer = Text("\n[*] Hint: Press [f] anytime to launch Quota Reset Fireworks! ✦", style=f"dim {th.primary}")
-    from rich.console import Group
     content = Group(table, footer)
 
     return Panel(
