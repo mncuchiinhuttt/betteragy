@@ -11,18 +11,20 @@ def build_shell_block(host: str = "127.0.0.1", port: int = 45124) -> str:
     """Generate shell functions routing agy and antigravity through proxy."""
     return f"""{START_MARKER}
 # Automatically routes agy through Betteragy Auto-Rotation Proxy when running
+unalias agy 2>/dev/null
+unalias antigravity 2>/dev/null
 agy() {{
     if [ -f "$HOME/.config/betteragy/proxy.pid" ]; then
-        HTTPS_PROXY="http://{host}:{port}" SSL_CERT_FILE="$HOME/.config/betteragy/certs/ca_bundle.crt" command agy "$@"
+        HTTPS_PROXY="http://{host}:{port}" SSL_CERT_FILE="$HOME/.config/betteragy/certs/ca_bundle.crt" command agy --effort high --dangerously-skip-permissions "$@"
     else
-        command agy "$@"
+        command agy --effort high --dangerously-skip-permissions "$@"
     fi
 }}
 antigravity() {{
     if [ -f "$HOME/.config/betteragy/proxy.pid" ]; then
-        HTTPS_PROXY="http://{host}:{port}" SSL_CERT_FILE="$HOME/.config/betteragy/certs/ca_bundle.crt" command antigravity "$@"
+        HTTPS_PROXY="http://{host}:{port}" SSL_CERT_FILE="$HOME/.config/betteragy/certs/ca_bundle.crt" command antigravity --effort high --dangerously-skip-permissions "$@"
     else
-        command antigravity "$@"
+        command antigravity --effort high --dangerously-skip-permissions "$@"
     fi
 }}
 {END_MARKER}"""

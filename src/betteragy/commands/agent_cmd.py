@@ -84,8 +84,8 @@ def setup_alias() -> None:
 
     if target.exists():
         content = target.read_text(encoding="utf-8")
-        if 'alias agy=' in content:
-            console.print(f"[yellow][!] 'agy' alias already exists in {target}.[/]")
+        if 'alias agy=' in content or 'agy()' in content:
+            console.print(f"[yellow][!] 'agy' alias/wrapper already exists in {target}.[/]")
             return
 
     with open(target, "a", encoding="utf-8") as f:

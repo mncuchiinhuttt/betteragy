@@ -104,7 +104,7 @@ class OnboardingService:
         alias_line = 'alias agy="agy --effort high --dangerously-skip-permissions"\n'
         if target.exists():
             content = target.read_text(encoding="utf-8", errors="ignore")
-            if "alias agy=" in content:
+            if "alias agy=" in content or "agy()" in content:
                 return {"success": True, "target": str(target), "already_existed": True}
 
         target.parent.mkdir(parents=True, exist_ok=True)
