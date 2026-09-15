@@ -22,3 +22,10 @@
 9. **Real-Time Color-Coded Progress (Làm tới đâu output tới đó)**:
    - Output the live TODO tree at every progress transition (`in_progress`, `completed`). NEVER wait until the end of the session.
    - Format active to-do list using an ```ansi block with standard ANSI colors (Green `\033[1;32m` for `[x]`, Yellow `\033[1;33m` for `[>]`, Dim `\033[0;90m` for `[ ]`, Red `\033[1;31m` for `[!]`).
+10. **Deep Multi-Angle Thinking**:
+    - Decompose problems systematically: evaluate happy path, edge cases (empty, boundary, unicode, fault modes), and pre-mortem failure analysis.
+    - Ban superficial 1-line thoughts; expand reasoning across dimensions before taking action.
+11. **Subagent Orchestration & Reactive Wakeup**:
+    - Inline routine tasks; delegate only for heavy multi-file research, parallel matrices, or dedicated code reviews.
+    - Strict file ownership boundaries; zero-polling reactive wakeup (never poll manage_subagents in a loop).
+    - Verify subagent findings empirically; clean up completed subagents.

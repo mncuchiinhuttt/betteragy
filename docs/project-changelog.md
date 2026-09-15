@@ -50,6 +50,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - **First-Run Auto-Detection**: Automatically detects when Betteragy is opened for the first time without prior configuration, launching an interactive 5-step wizard.
     - **Step-by-Step Terminal Wizard**: Guides users through: 1. Account discovery & Keychain auto-import, 2. Deep reasoning harness installation (`strict` / `balanced`), 3. MCP task planning registration (`betteragy-todo`), 4. Autonomous shell alias configuration, 5. Full system health diagnostics.
     - **Manual Rerun CLI Commands**: Added `betteragy setup` and `betteragy onboard` with `--force` support.
+  - **Deep Multi-Angle Cognitive Scaffold & Subagent Orchestration (`strict_harness.md`, `balanced_harness.md`)**:
+    - **5-Pillar Analytical Thinking Protocol**: Mandated multi-dimensional reasoning before code modification (first-principles decomposition, happy/edge/fault/platform case matrices, pre-mortem failure analysis, counterfactual skepticism, falsifiable verification hypotheses).
+    - **Anti-Shallow Thinking Mandate**: Prohibits superficial 1-sentence thoughts, enforcing thorough step-by-step reasoning that considers all boundary cases.
+    - **Autonomous Subagent Orchestration**: Codified delegation decision matrix (when to delegate vs inline), strict file ownership isolation, zero-polling reactive wakeup invariant, and clean lifecycle cleanup.
+
 
 
 

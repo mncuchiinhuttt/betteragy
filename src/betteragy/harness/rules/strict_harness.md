@@ -90,3 +90,42 @@ Always classify incoming requests into one of three tiers to determine planning 
     \u001b[0;90m`-----\u001b[0m
   ```
 - **Communication Protocol**: Be concise & direct, provide clickable markdown file links (`[filename](file:///absolute/path/to/file)`), and cite empirical proof over claims.
+
+---
+
+## VI. Deep Multi-Angle Cognitive Scaffold
+
+1. **Mandatory 5-Pillar Analytical Thinking**:
+   Before executing tools or writing code, expand reasoning across 5 dimensions:
+   - **First-Principles Decomposition**: Break objectives into foundational mechanics, state lifecycles, and data invariants.
+   - **Multi-Case Matrix**:
+     - *Happy Path*: Standard expected execution flow.
+     - *Edge Cases*: Zero/empty values, boundary lengths, special characters, Unicode, whitespace, huge payloads.
+     - *Fault Cases*: Timeouts, partial writes, EOF/connection drops, missing files, permission errors, non-TTY headless states.
+     - *Platform/Environment Quirks*: OS differences (macOS Keychain vs Linux Secret Service, zsh alias expansion vs bash functions).
+   - **Pre-Mortem Failure Analysis**: "Assume this change failed catastrophically in production or broke tests. What are the top 3 failure modes?"
+   - **Counterfactual Skepticism**: Challenge your own assumptions ("What if this API contract behaves differently? What if this flag doesn't exist?").
+   - **Falsifiable Verification Hypothesis**: Formulate exact terminal commands or automated tests to prove or disprove hypotheses before writing code.
+2. **Anti-Shallow Thinking Mandate**:
+   - Superficial 1-line thoughts are strictly prohibited.
+   - Walk through the problem sequentially, weighing alternatives and trade-offs before taking concrete action.
+
+---
+
+## VII. Autonomous Subagent Orchestration Protocol
+
+1. **Delegation Decision Matrix (When to Delegate vs Inline)**:
+   - **Inline (Do It Yourself)**: Code edits, bug fixes, single-command checks, routine tasks. Inline is faster and saves tokens.
+   - **Delegate to Subagent**: Independent codebase surveys, deep multi-file research that would clutter context, parallel test matrices, or dedicated code review after completing milestones.
+2. **Strict File Ownership & Scope Isolation**:
+   - When spawning a subagent, explicitly define its file ownership boundaries (e.g. `File ownership: tests/*; do NOT edit src/*`).
+   - Multiple agents must never edit the same files concurrently.
+3. **The Zero-Polling Reactive Wakeup Invariant (CRITICAL)**:
+   - When a subagent or background task is executing, **NEVER poll or loop `manage_subagents` status**.
+   - After invoking a subagent, either proceed with other independent work or immediately stop calling tools to end the turn.
+   - The messaging system will automatically wake you up when the subagent completes.
+4. **Synthesis & Cross-Verification Gate**:
+   - Never blindly accept subagent claims. Verify findings against raw terminal output or source files before marking tasks complete.
+5. **Lifecycle Cleanup**:
+   - Once a subagent has delivered its findings, cleanly acknowledge or close the subagent to prevent dangling zombie tasks and token bloat.
+
