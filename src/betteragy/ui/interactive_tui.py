@@ -39,11 +39,9 @@ class InteractiveTUI:
         info = self.update_svc.check_for_updates(force=False)
         self.update_ver = info.latest_version if (info and info.is_newer) else None
         self.current_screen = "main"
-        self.menu_idx = self.account_idx = self.add_idx = self.session_idx = self.session_tab_idx = 0
-        self.theme_idx = 0
-        self.selected_session_id = None
+        self.menu_idx = self.account_idx = self.add_idx = self.session_idx = self.session_tab_idx = self.theme_idx = 0
+        self.selected_session_id = self.cached_quota = self.cached_report = self.last_quota = None
         self.status_message = ""
-        self.cached_quota = self.cached_report = None
 
     def _is_proxy_active(self) -> bool:
         """Check whether local proxy daemon is running and healthy."""
@@ -101,6 +99,8 @@ class InteractiveTUI:
                         if key in (KEY_ESC, KEY_BACK, KEY_ENTER):
                             self.current_screen = "main"
                         elif key == KEY_REFRESH:
+                            if self.cached_quota:
+                                self.last_quota = self.cached_quota
                             self.cached_quota, self.cached_report = None, None
 
         except KeyboardInterrupt:
@@ -116,19 +116,46 @@ class InteractiveTUI:
         elements = build_screen_elements(self)
         self.console.print(Group(*elements))
 
+    def _fetch_active_quota(self, email: str):
+        """Fetch quota and trigger celebration if any model quota reset from exhaustion."""
+        old_q = self.last_quota or self.cached_quota
+        new_q = self.quota_agg.fetch_single_account(email)
+        if old_q and new_q and not new_q.is_error:
+            from ..services.quota_service import detect_quota_resets
+            resets = detect_quota_resets(old_q, new_q)
+            if resets:
+                from .fireworks import play_fireworks_celebration
+                play_fireworks_celebration(self.console, title=f"AI Quota Restored: {', '.join(resets)}!")
+        self.cached_quota, self.last_quota = new_q, None
+        return new_q
+
     def _handle_main_key(self, key: str) -> bool:
         """Handle key input on main menu. Returns True to exit."""
-        total_items = len(MAIN_MENU_ITEMS)
+        total = len(MAIN_MENU_ITEMS)
         if key in (KEY_UP, KEY_DOWN):
             delta = -1 if key == KEY_UP else 1
-            self.menu_idx = (self.menu_idx + delta) % total_items
+            self.menu_idx = (self.menu_idx + delta) % total
             self.status_message = ""
-        elif key == KEY_QUIT:
+        elif key in (KEY_QUIT, "x", "X"):
             return True
-        elif key == KEY_ESC:
+        elif key in (KEY_ESC,):
             self.status_message = ""
-        elif key == KEY_ENTER:
+        elif key in (KEY_ENTER,):
             return self._dispatch_action(MAIN_MENU_ITEMS[self.menu_idx][0])
+        elif key in ("f", "F"):
+            from .fireworks import play_fireworks_celebration
+            play_fireworks_celebration(self.console, title="AI Quota Restored! 7-Day Limit Reset Celebration")
+        elif key in ("p", "P"):
+            self.current_screen = "proxy"
+        elif key.isdigit() and 1 <= int(key) <= 9:
+            idx = int(key) - 1
+            if idx < total:
+                self.menu_idx = idx
+                return self._dispatch_action(MAIN_MENU_ITEMS[idx][0])
+        elif key.lower() == "t":
+            return self._dispatch_action("Theme")
+        elif key.lower() == "u":
+            return self._dispatch_action("Update")
         return False
 
     def _dispatch_action(self, action: str) -> bool:

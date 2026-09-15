@@ -12,20 +12,18 @@ from .theme import DEFAULT_BOX, format_status_badge
 from .theme_manager import get_theme_manager
 
 MAIN_MENU_ITEMS = [
-    ("[~] Switch Account", "Switch active account session for agy CLI and Keychain"),
-    ("[#] Live AI Quotas", "View real-time model quota percentages and reset countdowns"),
-    ("[$] Token Usage & Costs", "View all-time token consumption and estimated USD costs"),
-    ("[*] Rotate Account", "Advance to next healthy account using configured strategy"),
-    ("[!] Set Cooldown", "Mark current account rate-limited for 4h and auto-rotate"),
-    ("[+] Add Account", "Connect a new Google account via OAuth or direct token"),
-    ("[-] Remove Account", "Delete an account from your local switchboard pool"),
-    ("[*] Tasks & Planning", "View active agy task board and verification progress"),
-    ("[^] Thinking Harness", "View deep reasoning harness rules and status"),
-    ("[*] Auto-Rotation Proxy", "Transparent proxy with 429 auto-rotation & live switching"),
-    ("[>] Shell Integration", "View bash/zsh wrapper function and aliases for agy"),
-    ("[*] Color Themes", "Select app color scheme (Warm, Emerald, Cyber, Dracula)"),
-    ("[?] Check for Updates", "Check GitHub releases for latest updates"),
-    ("[x] Exit", "Exit Betteragy and return to shell"),
+    ("[1] Switch Account", "Switch active account for agy CLI and Keychain"),
+    ("[2] Live AI Quotas", "Inspect remaining model % & reset countdowns"),
+    ("[3] Token Usage", "All-time token consumption and estimated USD costs"),
+    ("[4] Rotate Account", "Advance to next healthy account in rotation pool"),
+    ("[5] Add Account", "Connect Google account via OAuth browser loopback"),
+    ("[6] Remove Account", "Delete an account from your local switchboard pool"),
+    ("[7] Tasks Planning", "Active agy task board, tab sessions & evidence"),
+    ("[8] Thinking Harness", "Multi-angle reasoning rules and OMP invariants"),
+    ("[9] Auto-Rotation Proxy", "Background MITM proxy daemon with 429 auto-swap"),
+    ("[t] Color Themes", "Select palette (Warm, Emerald, Cyber, Dracula)"),
+    ("[u] Check for Updates", "Check GitHub releases for latest version"),
+    ("[x] Exit", "Return to shell prompt"),
 ]
 
 ADD_ACCOUNT_METHODS = [
@@ -40,26 +38,19 @@ def render_main_menu_panel(
     update_ver: str | None = None,
     proxy_active: bool = False,
 ) -> Panel:
-    """Render the main interactive menu with dynamic active theme styling."""
+    """Render the categorized main interactive menu with dynamic active theme styling."""
     th = get_theme_manager().get_active_theme()
     header = Text()
     header.append("Betteragy", style=th.title_style)
     header.append(f" v{__version__}", style=th.subtitle_style)
     if update_ver:
         header.append(f" [update: v{update_ver}]", style=f"bold {th.quota_high}")
-    header.append(" -- Interactive Switchboard & Token Analytics\n", style="bold white")
-    header.append("Active Account: ", style=th.dim_style)
-    header.append(f"{active_email or 'None'}", style=f"bold {th.quota_high}")
-    if proxy_active:
-        header.append("  |  Proxy: ", style=th.dim_style)
-        header.append(f"[ok] Active (45124)\n", style=th.primary)
-    else:
-        header.append("\n")
+    header.append(" -- Command Center\n", style="bold white")
 
     menu_table = Table(box=None, show_header=False, pad_edge=False, padding=(0, 1))
     menu_table.add_column("Cursor", width=3, justify="center")
-    menu_table.add_column("Action", style="bold white", width=26)
-    menu_table.add_column("Description", style=th.dim_style, min_width=45)
+    menu_table.add_column("Action", style="bold white", width=27)
+    menu_table.add_column("Description", style=th.dim_style, min_width=35)
 
     for i, (title, desc) in enumerate(MAIN_MENU_ITEMS):
         is_sel = i == selected_idx
@@ -71,7 +62,7 @@ def render_main_menu_panel(
     content = Group(header, menu_table)
     return Panel(
         content,
-        title=f"[{th.title_style}]:: Main Menu ::[/{th.title_style}]",
+        title=f"[{th.title_style}]:: Command Menu ::[/{th.title_style}]",
         border_style=th.border_style,
         box=DEFAULT_BOX,
     )
@@ -160,7 +151,7 @@ def render_footer_hints(screen_name: str = "main") -> Panel:
     """Render contextual keybinding hints at the bottom of the screen."""
     th = get_theme_manager().get_active_theme()
     if screen_name == "main":
-        hints = f"[{th.primary}]Up/k[/{th.primary}] Up  |  [{th.primary}]Down/j[/{th.primary}] Down  |  [{th.quota_high}]Enter[/{th.quota_high}] Select  |  [{th.quota_low}]q[/{th.quota_low}] Exit"
+        hints = f"[{th.primary}]↑/↓/1-9[/{th.primary}] Navigate  |  [{th.quota_high}]Enter[/{th.quota_high}] Select  |  [{th.accent}]f[/{th.accent}] Fireworks  |  [{th.secondary}]p[/{th.secondary}] Proxy  |  [{th.quota_low}]q[/{th.quota_low}] Exit"
     elif screen_name == "oauth":
         hints = f"[{th.quota_low}]Esc/b[/{th.quota_low}] Cancel Login  |  [{th.quota_low}]q[/{th.quota_low}] Exit"
     elif screen_name == "tasks":

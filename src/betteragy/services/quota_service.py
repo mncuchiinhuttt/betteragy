@@ -2,6 +2,7 @@
 
 import json
 import time
+from typing import Optional
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -150,3 +151,20 @@ class QuotaService:
             tier_name=tier_name,
             buckets=parsed_buckets,
         )
+
+
+def detect_quota_resets(old_quota: Optional[AccountQuota], new_quota: Optional[AccountQuota]) -> list[str]:
+    """Detect if any exhausted or low model quotas were restored/reset.
+
+    Returns a list of model display names that were restored.
+    """
+    if not old_quota or not new_quota or old_quota.is_error or new_quota.is_error:
+        return []
+    restored: list[str] = []
+    old_map = {b.model_id: b.percentage for b in old_quota.buckets}
+    for b in new_quota.buckets:
+        old_pct = old_map.get(b.model_id, 100)
+        # If model was low/exhausted (<= 20%) and has recovered significantly (>= 50%)
+        if old_pct <= 20 and (b.percentage >= 50 or (b.percentage - old_pct) >= 30):
+            restored.append(b.display_name or b.model_id)
+    return restored
