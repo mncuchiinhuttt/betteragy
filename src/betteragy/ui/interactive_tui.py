@@ -128,6 +128,11 @@ class InteractiveTUI:
         with self.console.capture() as capture:
             self.console.print(Group(*elements))
         frame = capture.get()
+        if self.current_screen == "tasks":
+            for i, l in enumerate(frame.splitlines(), 1):
+                if "Task Title" in l:
+                    self._task_header_line = i
+                    break
         sys.stdout.write(f"\033[?2025h\033[H{frame}\033[J\033[?2025l")
         sys.stdout.flush()
 

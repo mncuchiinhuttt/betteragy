@@ -79,6 +79,7 @@ def build_screen_elements(tui) -> list:
         from .task_renderer import render_ascii_task_board
         sess_id = getattr(tui, "selected_session_id", None)
         task_idx = getattr(tui, "task_idx", 0)
+        tui._cached_tasks = tui.task_db.get_tasks(session_id=sess_id)
         elements.extend([render_ascii_task_board(tui.task_db, session_id=sess_id, selected_task_idx=task_idx), render_footer_hints("tasks")])
     elif tui.current_screen == "session_selector":
         from .session_flows import render_session_selector_panel

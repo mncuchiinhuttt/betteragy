@@ -106,13 +106,15 @@ def test_mouse_tasks_hover_and_clear():
     mock_tui.status_message = ""
     mock_tui.task_idx = 0
     mock_tui.selected_session_id = 1
+    mock_tui._task_header_line = 9
     mock_tui.task_db.list_sessions.return_value = [{"id": 1}]
-    mock_tui.task_db.get_tasks.return_value = [
+    tasks = [
         {"id": 10, "title": "Task 1", "status": "pending", "priority": "high"},
         {"id": 11, "title": "Task 2", "status": "in_progress", "priority": "medium"},
     ]
+    mock_tui.task_db.get_tasks.return_value = tasks
+    mock_tui._cached_tasks = tasks
     mock_tui.task_db.clear_tasks.return_value = 2
-
     # Hover over line 11 (Task 1)
     assert handle_mouse_hover(mock_tui, 15, 11) is True
     assert mock_tui.task_idx == 1

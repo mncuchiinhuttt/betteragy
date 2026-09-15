@@ -115,32 +115,30 @@ def handle_mouse_click(tui, x: int, y: int) -> bool:
         if y in (2 + offset, 3 + offset):
             handle_tasks_key(tui, "RIGHT")
             return False
-        sessions = tui.task_db.list_sessions(limit=20)
-        cur_id = getattr(tui, "selected_session_id", None) or (sessions[0]["id"] if sessions else None)
-        tasks = tui.task_db.get_tasks(session_id=cur_id) if cur_id else []
-        table_start_y = 10 + offset
-        table_end_y = table_start_y + len(tasks) - 1
-        if tasks and table_start_y <= y <= table_end_y:
-            idx = y - table_start_y
-            if 0 <= idx < len(tasks):
-                tui.task_idx = idx
-                handle_tasks_key(tui, " ")
-                return False
-        if y >= 21 + offset:
+        hdr_line = getattr(tui, "_task_header_line", None) or (9 + offset)
+        tasks = getattr(tui, "_cached_tasks", None)
+        if tasks is None:
+            cur_id = getattr(tui, "selected_session_id", None)
+            tasks = tui.task_db.get_tasks(session_id=cur_id) if cur_id else []
+        start_y = hdr_line + 1
+        end_y = start_y + len(tasks) - 1
+        if tasks and start_y <= y <= end_y:
+            tui.task_idx = y - start_y
+            handle_tasks_key(tui, " ")
+            return False
+        if y > end_y:
             if x < 45:
                 handle_tasks_key(tui, "c")
             else:
                 tui.current_screen = "main"
             return False
 
-    # 6. Proxy Screen
     if screen == "proxy":
         from .proxy_flows import handle_proxy_key
         if y in (4 + offset, 17 + offset, 20 + offset):
             return handle_proxy_key(tui, "p")
-        if y in (18 + offset, 21 + offset) or y > 18 + offset:
-            tui.current_screen = "main"
-            return False
+        tui.current_screen = "main"
+        return False
 
     # 7. Other screens: click to return to main
     tui.current_screen = "main"
@@ -182,10 +180,12 @@ def handle_mouse_hover(tui, x: int, y: int) -> bool:
         return False
 
     if screen == "tasks":
-        sessions = tui.task_db.list_sessions(limit=20)
-        cur_id = getattr(tui, "selected_session_id", None) or (sessions[0]["id"] if sessions else None)
-        tasks = tui.task_db.get_tasks(session_id=cur_id) if cur_id else []
-        start_y = 10 + offset
+        hdr_line = getattr(tui, "_task_header_line", None) or (9 + offset)
+        tasks = getattr(tui, "_cached_tasks", None)
+        if tasks is None:
+            cur_id = getattr(tui, "selected_session_id", None)
+            tasks = tui.task_db.get_tasks(session_id=cur_id) if cur_id else []
+        start_y = hdr_line + 1
         if tasks and start_y <= y < start_y + len(tasks) and (y - start_y) != getattr(tui, "task_idx", 0):
             tui.task_idx = y - start_y
             return True
