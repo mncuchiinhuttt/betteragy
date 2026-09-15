@@ -7,6 +7,7 @@ from . import __version__
 from .commands.account_cmd import account_app
 from .commands.agent_cmd import agent_app
 from .commands.harness_cmd import harness_app
+from .commands.hud_cmd import hud_app
 from .commands.mcp_cmd import mcp_app
 from .commands.proxy_cmd import proxy_app
 from .commands.quota_cmd import quota_command
@@ -45,7 +46,7 @@ app.add_typer(mcp_app, name="mcp")
 app.add_typer(tasks_app, name="tasks")
 app.add_typer(agent_app, name="agent")
 app.add_typer(proxy_app, name="proxy")
-
+app.add_typer(hud_app, name="hud")
 # Register top-level commands
 app.command("quota")(quota_command)
 app.command("shell")(shell_integration_command)

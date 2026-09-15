@@ -69,6 +69,13 @@ class InteractiveTUI:
                         continue
 
                     needs_redraw = True
+                    if key.startswith("CLICK:"):
+                        from .mouse_handler import handle_mouse_click
+                        _, x_s, y_s = key.split(":")
+                        if handle_mouse_click(self, int(x_s), int(y_s)):
+                            break
+                        continue
+
                     if self.current_screen == "main":
                         if self._handle_main_key(key):
                             break

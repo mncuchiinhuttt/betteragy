@@ -1,0 +1,59 @@
+"""Unit tests for mouse tracking sequence parser and TUI mouse click dispatcher."""
+
+from unittest.mock import MagicMock
+from betteragy.core.models import AccountRecord
+from betteragy.ui.key_listener import KEY_DOWN, KEY_UP, KeyListener
+from betteragy.ui.mouse_handler import handle_mouse_click
+
+
+def test_mouse_sgr_sequence_parsing():
+    """Verify KeyListener converts raw ANSI SGR sequences into key/click events."""
+    # Left click press at col 15, row 8 -> CLICK:15:8
+    assert KeyListener._parse_unix_sequence(b"\x1b[<0;15;8M") == "CLICK:15:8"
+    # Left click release -> None
+    assert KeyListener._parse_unix_sequence(b"\x1b[<0;15;8m") is None
+    # Wheel up (b=64) -> KEY_UP
+    assert KeyListener._parse_unix_sequence(b"\x1b[<64;10;5M") == KEY_UP
+    # Wheel down (b=65) -> KEY_DOWN
+    assert KeyListener._parse_unix_sequence(b"\x1b[<65;10;5M") == KEY_DOWN
+
+
+def test_mouse_click_main_menu():
+    """Verify clicking menu rows triggers item selection and action dispatch."""
+    mock_tui = MagicMock()
+    mock_tui.current_screen = "main"
+    mock_tui.status_message = ""
+    mock_tui.console.width = 100
+    mock_tui._dispatch_action.return_value = False
+
+    # Row 5 corresponds to Item 0 ([1] Switch Account)
+    handle_mouse_click(mock_tui, 10, 5)
+    assert mock_tui.menu_idx == 0
+    assert mock_tui._dispatch_action.called
+
+    # Row 6 corresponds to Item 1 ([2] Live AI Quotas)
+    mock_tui._dispatch_action.reset_mock()
+    handle_mouse_click(mock_tui, 10, 6)
+    assert mock_tui.menu_idx == 1
+    assert mock_tui._dispatch_action.called
+
+
+def test_mouse_click_account_list():
+    """Verify clicking account table row selects and switches account."""
+    mock_tui = MagicMock()
+    mock_tui.current_screen = "switch_account"
+    mock_tui.status_message = ""
+    mock_tui.acc_svc.switch_account.return_value = (True, "Switched")
+    mock_tui.acc_svc.get_accounts.return_value = [
+        AccountRecord(email="acc1@gmail.com", refresh_token="rf1"),
+        AccountRecord(email="acc2@gmail.com", refresh_token="rf2"),
+    ]
+    # Row 4 corresponds to Account 0
+    handle_mouse_click(mock_tui, 12, 4)
+    mock_tui.acc_svc.switch_account.assert_called_with("acc1@gmail.com")
+
+    # Reset screen and status_message; row 5 corresponds to Account 1
+    mock_tui.current_screen = "switch_account"
+    mock_tui.status_message = ""
+    handle_mouse_click(mock_tui, 12, 5)
+    mock_tui.acc_svc.switch_account.assert_called_with("acc2@gmail.com")

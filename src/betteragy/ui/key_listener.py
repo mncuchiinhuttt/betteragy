@@ -32,6 +32,8 @@ class KeyListener:
                 self.fd = sys.stdin.fileno()
                 self._old_settings = termios.tcgetattr(self.fd)
                 tty.setcbreak(self.fd)
+                sys.stdout.write("\033[?1000h\033[?1006h")
+                sys.stdout.flush()
             except Exception:
                 self._old_settings = None
         return self
@@ -39,8 +41,9 @@ class KeyListener:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if not self.is_windows and self._old_settings is not None:
             import termios
-
             try:
+                sys.stdout.write("\033[?1000l\033[?1006l")
+                sys.stdout.flush()
                 termios.tcsetattr(self.fd, termios.TCSADRAIN, self._old_settings)
             except Exception:
                 pass
@@ -119,6 +122,24 @@ class KeyListener:
     @staticmethod
     def _parse_unix_sequence(data: bytes) -> str:
         """Parse raw terminal byte sequences into standardized key tokens."""
+        if data.startswith(b"\x1b[<"):
+            try:
+                raw_seq = data[3:].decode("latin1", errors="ignore")
+                btn_str, rest = raw_seq.split(";", 1)
+                x_str, rest2 = rest.split(";", 1)
+                y_str = rest2[:-1]
+                event_type = rest2[-1]
+                b, x, y = int(btn_str), int(x_str), int(y_str)
+                if b == 64:
+                    return KEY_UP
+                if b == 65:
+                    return KEY_DOWN
+                if b == 0 and event_type == "M":
+                    return f"CLICK:{x}:{y}"
+                return None
+            except Exception:
+                return None
+
         if data.startswith(b"\x1b"):
             if len(data) == 1:
                 return KEY_ESC
