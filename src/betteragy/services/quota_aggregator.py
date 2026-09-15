@@ -22,7 +22,10 @@ class QuotaAggregator:
 
         try:
             token = self.account_service.ensure_valid_access_token(acc)
-            return self.quota_service.fetch_quota(acc.email, token)
+            quota = self.quota_service.fetch_quota(acc.email, token)
+            if quota.tier_name or quota.tier:
+                self.account_service.update_account_tier(acc.email, quota.tier, quota.tier_name)
+            return quota
         except Exception as e:
             return AccountQuota(email=email, is_error=True, error_message=str(e))
 

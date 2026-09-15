@@ -8,7 +8,7 @@ from rich.text import Text
 
 from .. import __version__
 from ..core.models import AccountRecord
-from .theme import DEFAULT_BOX, format_status_badge
+from .theme import DEFAULT_BOX, format_status_badge, format_tier_name
 from .theme_manager import get_theme_manager
 
 MAIN_MENU_ITEMS = [
@@ -89,7 +89,7 @@ def render_account_selector_panel(
         is_sel = i == selected_idx
         is_active = bool(active_email and acc.email.lower() == active_email.lower())
         badge = format_status_badge(is_active, False, acc.disabled, theme=th)
-        tier_str = acc.tier_name or acc.tier or "Standard"
+        tier_str = format_tier_name(acc.tier_name, acc.tier)
 
         cursor = f"[{th.cursor_style}]>[/{th.cursor_style}]" if is_sel else " "
         row_style = th.sel_style if is_sel else None

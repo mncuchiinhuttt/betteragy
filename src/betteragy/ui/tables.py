@@ -5,7 +5,7 @@ from typing import Optional
 from rich.table import Table
 
 from ..core.models import AccountQuota, AccountRecord, DeepUsageReport
-from .theme import DEFAULT_BOX, format_cost, format_status_badge, format_tokens, render_progress_bar
+from .theme import DEFAULT_BOX, format_cost, format_status_badge, format_tier_name, format_tokens, render_progress_bar
 from .theme_manager import get_theme_manager
 
 
@@ -30,7 +30,7 @@ def render_accounts_table(accounts: list[AccountRecord], active_email: Optional[
         is_active = bool(active_email and acc.email.lower() == active_email.lower())
         is_cooldown = acc.cooldown_until > now
         badge = format_status_badge(is_active, is_cooldown, acc.disabled, theme=th)
-        tier_str = acc.tier_name or acc.tier or "Standard"
+        tier_str = format_tier_name(acc.tier_name, acc.tier)
 
         last_str = "Never"
         if acc.last_used > 0:
@@ -51,7 +51,7 @@ def render_accounts_table(accounts: list[AccountRecord], active_email: Optional[
 def render_quota_table(quota: AccountQuota) -> Table:
     """Build a table displaying model quota buckets and reset timers."""
     th = get_theme_manager().get_active_theme()
-    tier_info = f" ({quota.tier_name or quota.tier})" if quota.tier else ""
+    tier_info = f" ({format_tier_name(quota.tier_name, quota.tier)})" if (quota.tier_name or quota.tier) else ""
     title = f"[{th.title_style}]AI Model Quota — {quota.email}{tier_info}[/{th.title_style}]"
     table = Table(title=title, box=DEFAULT_BOX, header_style=th.header_style, title_justify="left", expand=True)
 

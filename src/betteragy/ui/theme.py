@@ -75,3 +75,15 @@ def format_status_badge(is_active: bool, is_cooldown: bool, disabled: bool, them
     if is_active:
         return th.active_badge
     return th.ready_badge
+
+
+def format_tier_name(tier_name: str | None = None, tier_id: str | None = None) -> str:
+    """Format subscription tier into clean, explicit branding."""
+    if tier_name and tier_name.strip() and tier_name != "Standard":
+        return tier_name
+    id_map = {
+        "g1-pro-tier": "Google AI Pro",
+        "g1-ultra-tier": "Google AI Ultra",
+        "free-tier": "Google AI Plus",
+    }
+    return id_map.get(tier_id or "", "Google AI Pro")

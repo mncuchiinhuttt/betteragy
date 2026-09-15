@@ -6,7 +6,7 @@ from rich.table import Table
 from rich.text import Text
 
 from ..core.models import AccountQuota, AccountRecord, QuotaBucket
-from .theme import DEFAULT_BOX, format_status_badge, render_progress_bar
+from .theme import DEFAULT_BOX, format_status_badge, format_tier_name, render_progress_bar
 from .theme_manager import get_theme_manager
 
 
@@ -24,9 +24,9 @@ def render_active_overview_card(
     t.add_column("Value", min_width=25)
 
     email = account.email if account else "No Account Linked"
-    tier = (account.tier_name or account.tier or "Standard") if account else "None"
+    tier = format_tier_name(account.tier_name, account.tier) if account else "None"
     t.add_row("Active Account", Text(email, style="bold white"))
-    t.add_row("Google Tier", Text(f"Tier: {tier}", style=f"bold {th.primary}"))
+    t.add_row("Google Tier", Text(tier, style=f"bold {th.primary}"))
     t.add_row("Account Pool", Text(f"{account_count} account(s) ready", style=th.secondary))
 
     p_badge = Text(f"[ok] Active (45124)", style=f"bold {th.quota_high}") if proxy_active else Text("[ ] Offline", style=th.dim_style)

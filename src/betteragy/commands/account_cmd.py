@@ -9,7 +9,7 @@ from ..services.account_service import AccountService
 from ..services.oauth_service import fetch_user_info, refresh_access_token, start_oauth_flow
 from ..services.rotation_service import RotationService
 from ..ui.tables import render_accounts_table
-from ..ui.theme import BETTERAGY_THEME
+from ..ui.theme import BETTERAGY_THEME, format_tier_name
 
 account_app = typer.Typer(help="Manage and switch Antigravity accounts")
 console = Console(theme=BETTERAGY_THEME)
@@ -129,4 +129,4 @@ def account_current():
     if not acc:
         console.print("[yellow]No active account configured.[/yellow]")
         raise typer.Exit(0)
-    console.print(f"Active Account: [bold green]{acc.email}[/bold green] ({acc.tier_name or acc.tier or 'Standard'})")
+    console.print(f"Active Account: [bold green]{acc.email}[/bold green] ({format_tier_name(acc.tier_name, acc.tier)})")

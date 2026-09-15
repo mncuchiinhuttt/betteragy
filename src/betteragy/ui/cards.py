@@ -5,7 +5,7 @@ from rich.columns import Columns
 from rich.panel import Panel
 
 from ..core.models import AccountRecord, DeepUsageReport
-from .theme import DEFAULT_BOX, format_cost, format_tokens
+from .theme import DEFAULT_BOX, format_cost, format_tier_name, format_tokens
 
 
 def render_kpi_cards(
@@ -16,7 +16,7 @@ def render_kpi_cards(
 
     # Card 1: Active Profile
     acc_name = active_account.email if active_account else "None"
-    tier_name = (active_account.tier_name or active_account.tier) if active_account else "Standard"
+    tier_name = format_tier_name(active_account.tier_name, active_account.tier) if active_account else "None"
     p_profile = Panel(
         f"[bold white]{acc_name}[/bold white]\n[dim cyan]Tier: {tier_name}[/dim cyan]",
         title="[bold green][*] Active Account[/bold green]",

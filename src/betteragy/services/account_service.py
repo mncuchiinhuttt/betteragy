@@ -106,6 +106,14 @@ class AccountService:
         if make_active:
             storage.active_email = record.email
         write_accounts_storage(storage)
+    def update_account_tier(self, email: str, tier_id: Optional[str], tier_name: Optional[str]) -> None:
+        """Update and persist subscription tier metadata for an account."""
+        storage = self.get_storage()
+        acc = next((a for a in storage.accounts if a.email.lower() == email.lower()), None)
+        if acc and (tier_id or tier_name):
+            if tier_id: acc.tier = tier_id
+            if tier_name: acc.tier_name = tier_name
+            write_accounts_storage(storage)
 
     def remove_account(self, identifier: str) -> bool:
         storage = self.get_storage()
@@ -145,14 +153,19 @@ class AccountService:
             expires_in = tokens.get("expires_in", 3600)
             target.expiry = datetime.fromtimestamp(time.time() + expires_in, timezone.utc).isoformat()
             target.last_used = time.time()
-            if "refresh_token" in tokens:
-                target.refresh_token = tokens["refresh_token"]
-
-            KeyringAdapter.write_credential(
-                access_token=target.access_token,
+            self._active_keyring.save_credentials(
+                email=target.email,
+                token=target.access_token,
                 refresh_token=target.refresh_token,
                 expiry=target.expiry,
             )
+            if target.tier_name is None or target.tier is None:
+                try:
+                    from .quota_service import QuotaService
+                    _, tid, tname = QuotaService().load_project_info(target.access_token)
+                    self.update_account_tier(target.email, tid, tname)
+                except Exception:
+                    pass
 
             storage.active_email = target.email
             write_accounts_storage(storage)
