@@ -128,12 +128,33 @@ Installed into `~/.gemini/config/rules/betteragy-harness.md` and `~/.gemini/GEMI
 
 ## Installation & Quick Start
 
-### 1. Prerequisites
-- Python 3.12 or higher.
-- `uv` (recommended) or `pip`.
-- macOS Keychain or Linux Secret Service (`libsecret`).
+### 🚀 One-Line Automated Install
 
-### 2. Install Betteragy
+**macOS & Linux (Unix):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/mncuchiinhuttt/betteragy/master/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/mncuchiinhuttt/betteragy/master/install.ps1 | iex
+```
+
+---
+
+### Alternative Package Managers
+
+**Via uv (Recommended):**
+```bash
+uv tool install git+https://github.com/mncuchiinhuttt/betteragy.git
+```
+
+**Via pipx:**
+```bash
+pipx install git+https://github.com/mncuchiinhuttt/betteragy.git
+```
+
+**From Source:**
 ```bash
 # Clone the repository
 git clone https://github.com/mncuchiinhuttt/betteragy.git
