@@ -75,19 +75,27 @@ Always classify incoming requests into one of three tiers to determine planning 
 - **Live Progress Output (Làm tới đâu output tới đó - MANDATORY)**:
   - Output the current TODO checklist at EVERY milestone/progress transition (whenever a task transitions to `in_progress` or is marked `completed`). NEVER wait until the very end to output the list!
 - **Single-Width ASCII Glyphs Only**: `[ok]`, `[>]`, `[ ]`, `[x]`, `[~]`, `[*]`, `[!]`, `[+]`, `[-]`. No double-width emojis.
-- **Color-Coded ANSI Tree Output (MANDATORY)**: Format active to-do list in chat responses using an ```ansi code block with standard ANSI escape codes for full color formatting:
-  - **Bold Green** (`\033[1;32m`): Completed tasks `[x]`
-  - **Bold Yellow / Amber** (`\033[1;33m`): Active tasks `[>]` (in_progress)
-  - **Dim Gray** (`\033[0;90m`): Pending tasks `[ ]`
-  - **Bold Red** (`\033[1;31m`): Blocked tasks `[!]`
-  - **Bold Cyan / White** (`\033[1;36m` / `\033[1;37m`): Section headers and completion ratios `X/Y`
-  ```ansi
-  \u001b[1;36mTODO\u001b[0m
-    \u001b[0;90m|--\u001b[0m \u001b[1;37m<Goal / Phase Title> · <completed_count>/<total_count>\u001b[0m
-    \u001b[0;90m|  |--\u001b[0m \u001b[1;32m[x]\u001b[0m \u001b[0;32m<Completed task title>\u001b[0m
-    \u001b[0;90m|  |--\u001b[0m \u001b[1;33m[>]\u001b[0m \u001b[1;33m<Active task title> (in_progress)\u001b[0m
-    \u001b[0;90m|  '--\u001b[0m \u001b[0;90m[ ] <Pending task title>\u001b[0m
-    \u001b[0;90m`-----\u001b[0m
+- **Native Markdown Colored Checklist (MANDATORY)**: NEVER use raw ANSI escape codes (`\033[...]` or `\u001b[...]`) in chat output because Antigravity's chat renderer strips ESC bytes and exposes mangled `[1;36m` text. Instead, use a ```diff code block for 100% native markdown syntax highlighting:
+  - Lines starting with `+` render in **Green** for completed `[x]` tasks
+  - Lines starting with `!` render in **Yellow/Amber** for active `[>]` (in_progress) tasks
+  - Lines starting with `-` render in **Red** for blocked `[!]` tasks
+  - Lines starting with `#` render in **Cyan/Blue** for headers `[done/total]`
+  - Lines starting with ` ` (space) render in **Gray/Neutral** for pending `[ ]` tasks
+  ```diff
+  # TODO: <Goal / Phase Title> [<completed_count>/<total_count>]
+  + [x] <Completed task title>
+  ! [>] <Active task title> (in_progress)
+  - [!] <Blocked task title> (blocked)
+    [ ] <Pending task title>
+  ```
+  Alternatively, you may use a clean plain ASCII tree without raw escape codes:
+  ```
+  TODO
+    |-- <Goal> · <done>/<total>
+    |  |-- [x] <Completed task>
+    |  |-- [>] <Active task> (in_progress)
+    |  '-- [ ] <Pending task>
+    `-----
   ```
 - **Communication Protocol**: Be concise & direct, provide clickable markdown file links (`[filename](file:///absolute/path/to/file)`), and cite empirical proof over claims.
 

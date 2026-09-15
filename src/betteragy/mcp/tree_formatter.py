@@ -74,3 +74,37 @@ def format_tasks_ascii_tree(
 
     lines.append(f"  {D}`-----{RST}")
     return "\n".join(lines)
+
+
+def format_tasks_diff(
+    goal: str,
+    tasks: List[Dict[str, Any]],
+    project_name: str = "",
+) -> str:
+    """Format tasks into a clean diff codeblock for 100% native markdown color rendering."""
+    total, done = len(tasks), sum(1 for t in tasks if t.get("status") == "completed")
+    proj = f" ({project_name})" if project_name else ""
+    lines = [f"# TODO: {goal or 'Active Tasks'}{proj} [{done}/{total}]"]
+    if not tasks:
+        lines.append("  [ ] No tasks scheduled")
+    else:
+        for t in tasks:
+            st = t.get("status", "pending")
+            pfx = "+" if st == "completed" else ("!" if st == "in_progress" else ("-" if st == "blocked" else " "))
+            m = "[x]" if st == "completed" else ("[>]" if st == "in_progress" else ("[!]" if st == "blocked" else "[ ]"))
+            badges = []
+            if t.get("assigned_to"):
+                badges.append(f"@{t['assigned_to']}")
+            if t.get("depends_on"):
+                badges.append(f"needs #{t['depends_on']}")
+            b_str = f" ({' | '.join(badges)})" if badges else ""
+            st_sfx = f" ({st})" if st in ("in_progress", "blocked") else ""
+            lines.append(f"{pfx} {m} #{t['id']} {t.get('title', '')}{b_str}{st_sfx}")
+            deps_ok, unmet = check_dependencies(t, tasks)
+            if not deps_ok and st in ("pending", "in_progress"):
+                unmet_str = ", ".join(f"#{u}" for u in unmet)
+                lines.append(f"  - [!] Blocked by pending: {unmet_str}")
+            if t.get("evidence"):
+                lines.append(f"    Evidence: {t['evidence']}")
+    return "\n".join(lines)
+
