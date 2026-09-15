@@ -151,7 +151,7 @@ def render_footer_hints(screen_name: str = "main") -> Panel:
     """Render contextual keybinding hints at the bottom of the screen."""
     th = get_theme_manager().get_active_theme()
     if screen_name == "main":
-        hints = f"[{th.primary}]↑/↓/1-9[/{th.primary}] Navigate  |  [{th.quota_high}]Enter[/{th.quota_high}] Select  |  [{th.accent}]f[/{th.accent}] Fireworks  |  [{th.secondary}]p[/{th.secondary}] Proxy  |  [{th.quota_low}]q[/{th.quota_low}] Exit"
+        hints = f"[{th.primary}]↑/↓/1-9[/{th.primary}] Navigate  |  [{th.quota_high}]Enter[/{th.quota_high}] Select  |  [{th.primary}]f[/{th.primary}] Fireworks  |  [{th.secondary}]p[/{th.secondary}] Proxy  |  [{th.quota_low}]q[/{th.quota_low}] Exit"
     elif screen_name == "oauth":
         hints = f"[{th.quota_low}]Esc/b[/{th.quota_low}] Cancel Login  |  [{th.quota_low}]q[/{th.quota_low}] Exit"
     elif screen_name == "tasks":
