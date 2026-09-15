@@ -34,7 +34,7 @@ class HarnessService:
             block = f"\n{START_MARKER}\n{content.strip()}\n{END_MARKER}\n"
             if START_MARKER in existing and END_MARKER in existing:
                 pattern = re.compile(rf"{re.escape(START_MARKER)}.*?{re.escape(END_MARKER)}\n?", re.DOTALL)
-                updated = pattern.sub(block.strip() + "\n", existing)
+                updated = pattern.sub(lambda _: block.strip() + "\n", existing)
             else:
                 updated = (existing.rstrip() + "\n" + block) if existing else block.strip() + "\n"
             self.gemini_md_path.write_text(updated, encoding="utf-8")

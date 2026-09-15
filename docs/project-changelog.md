@@ -41,6 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       - **Clean Cutover Rule**: When refactoring interfaces, update all callers across the codebase and purge obsolete code and deprecated shims.
       - **Anti-Spinning Loop Guards**: Detect and immediately break circular thinking/deliberation loops by picking the most boring viable choice and making a concrete tool call; prevent repetitive failing tool calls.
       - **Task Batching & Smoke Testing**: Prohibit isolated to-do calls (always batch with real edits/tests); conduct live behavioral smoke testing on CLIs and servers.
+  - **Real-Time Color-Coded Progress & ANSI Tree Reporting (`todo_tools.py`, `strict_harness.md`, `balanced_harness.md`, `harness_service.py`, `test_todo_formatting.py`)**:
+    - **Step-by-Step Live Output**: MCP tools `todo_add` and `todo_update` automatically format and return the full updated TODO tree directly in tool outputs, enabling immediate visibility at every step.
+    - **Color-Coded ANSI Tree Output**: Added standard ANSI escape codes to `format_tasks_ascii_tree` with vibrant green for completed `[x]`, warm yellow/amber for active `[>]`, dim gray for pending `[ ]`, bold red for blocked `[!]`, and cyan/white for headers and progress ratios (`done/total`).
+    - **Harness Enforcement**: Formulated mandatory harness directives requiring the agent to output the color-coded to-do tree in an ````ansi code block at every progress transition (`in_progress`, `completed`), eliminating end-of-session dump delays.
+    - **Robust Regex Replacement**: Fixed `re.sub` escaping in `harness_service.py` to handle backslashes in replacement content without raising `re.error: bad escape`.
+
 
 ## [1.1.0] - 2026-09-14
 

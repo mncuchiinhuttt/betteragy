@@ -21,6 +21,7 @@
 - [x] Process session affinity in MCP server and session filtering in CLI (`betteragy tasks sessions`, `betteragy tasks switch`).
 - [x] Horizontal multi-tab session bar with Left/Right arrow & vi `h`/`l` interactive cycling.
 - [x] Hierarchical single-width ASCII tree checklist output (`format_tasks_ascii_tree`) with status markers.
+- [x] Real-time color-coded ANSI tree progress reporting (`\033[1;32m` done, `\033[1;33m` in-progress, `\033[0;90m` pending, `\033[1;31m` blocked) in tool outputs and harness directives.
 - [x] GitHub Releases/Tags update checker service with local caching and CLI/TUI integration.
 
 

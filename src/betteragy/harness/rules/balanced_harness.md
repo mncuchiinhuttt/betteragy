@@ -19,3 +19,6 @@
    - Use kebab-case for file naming.
    - Adhere to YAGNI, KISS, and DRY.
    - Use clean single-width ASCII markers (`[ok]`, `[>]`, `[ ]`, `[x]`).
+9. **Real-Time Color-Coded Progress (Làm tới đâu output tới đó)**:
+   - Output the live TODO tree at every progress transition (`in_progress`, `completed`). NEVER wait until the end of the session.
+   - Format active to-do list using an ```ansi block with standard ANSI colors (Green `\033[1;32m` for `[x]`, Yellow `\033[1;33m` for `[>]`, Dim `\033[0;90m` for `[ ]`, Red `\033[1;31m` for `[!]`).
