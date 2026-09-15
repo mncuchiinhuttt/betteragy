@@ -26,13 +26,16 @@ def render_progress_bar(percentage: float | int, width: int = 14) -> str:
 
     if pct >= 50:
         color = "green"
+        track_color = "dim green"
     elif pct >= 20:
         color = "yellow"
+        track_color = "dim yellow"
     else:
         color = "red"
+        track_color = "dim red"
 
-    filled_bar = f"[{color}]{'█' * filled_len}[/{color}]" if filled_len > 0 else ""
-    empty_bar = f"[dim]{'░' * empty_len}[/dim]" if empty_len > 0 else ""
+    filled_bar = f"[bold {color}]{'█' * filled_len}[/bold {color}]" if filled_len > 0 else ""
+    empty_bar = f"[{track_color}]{'░' * empty_len}[/{track_color}]" if empty_len > 0 else ""
 
     return f"{filled_bar}{empty_bar} [bold {color}]{pct:>3}%[/bold {color}]"
 

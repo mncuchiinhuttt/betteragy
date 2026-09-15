@@ -47,11 +47,17 @@ def test_render_progress_bar():
     out_100 = console.export_text()
     assert "██████████ 100%" in out_100
 
-    # 50% (green, 5 '█', 5 '░')
+    # 50% (green >= 50%)
     bar_50 = render_progress_bar(50, width=10)
     assert "50%" in bar_50
+    assert "green" in bar_50
     assert "█" * 5 in bar_50
     assert "░" * 5 in bar_50
+
+    # 49% (yellow < 50%)
+    bar_49 = render_progress_bar(49, width=10)
+    assert "49%" in bar_49
+    assert "yellow" in bar_49
 
     # 28% (yellow, 3 '█', 7 '░')
     bar_28 = render_progress_bar(28, width=10)
@@ -60,10 +66,16 @@ def test_render_progress_bar():
     assert "█" * 3 in bar_28
     assert "░" * 7 in bar_28
 
+    # 19% (red < 20%)
+    bar_19 = render_progress_bar(19, width=10)
+    assert "19%" in bar_19
+    assert "red" in bar_19
+
     # 0% (red, 0 '█', 10 '░')
     bar_0 = render_progress_bar(0, width=10)
     assert "0%" in bar_0
     assert "red" in bar_0
+    assert "dim red" in bar_0
     assert "░" * 10 in bar_0
 
     # Clamping tests (< 0 and > 100)
