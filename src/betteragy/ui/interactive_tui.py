@@ -41,13 +41,10 @@ class InteractiveTUI:
         self.update_ver = info.latest_version if (info and info.is_newer) else None
         self.current_screen = "main"
         self.menu_idx = self.account_idx = self.add_idx = self.session_idx = self.session_tab_idx = self.theme_idx = 0
-        self.selected_session_id = self.cached_quota = self.cached_report = self.last_quota = None
+        self.selected_session_id = self.cached_quota = self.cached_report = self.last_quota = self._last_scr = None
         self.status_message = ""
 
-    def _is_proxy_active(self) -> bool:
-        """Check whether local proxy daemon is running and healthy."""
-        return is_proxy_running()
-
+    def _is_proxy_active(self) -> bool: return is_proxy_running()
     def run(self) -> None:
         """Run the interactive alternate-screen navigation loop."""
         sys.stdout.write("\033[?1049h\033[?25l")
@@ -130,12 +127,13 @@ class InteractiveTUI:
         frame = capture.get()
         if self.current_screen == "tasks":
             for i, l in enumerate(frame.splitlines(), 1):
-                if "Task Title" in l:
-                    self._task_header_line = i
-                    break
-        sys.stdout.write(f"\033[?2025h\033[H{frame}\033[J\033[?2025l")
-        sys.stdout.flush()
+                if "Task Title" in l: self._task_header_line = i; break
 
+        scr_chg = self.current_screen != self._last_scr
+        self._last_scr = self.current_screen
+        clean = "\n".join(f"{line}\033[K" for line in frame.splitlines())
+        sys.stdout.write(f"\033[?2025h{'\033[2J' if scr_chg else ''}\033[H{clean}\033[J\033[?2025l")
+        sys.stdout.flush()
     def _fetch_active_quota(self, email: str):
         """Fetch quota and trigger celebration if any model quota reset from exhaustion."""
         old_q = self.last_quota or self.cached_quota

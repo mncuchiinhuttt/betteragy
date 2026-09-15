@@ -17,6 +17,7 @@ def render_accounts_table(accounts: list[AccountRecord], active_email: Optional[
         box=DEFAULT_BOX,
         header_style=th.header_style,
         title_justify="left",
+        expand=True,
     )
     table.add_column("#", style=th.dim_style, justify="right", width=3)
     table.add_column("Account / Email", style="bold white", min_width=25)
@@ -52,7 +53,7 @@ def render_quota_table(quota: AccountQuota) -> Table:
     th = get_theme_manager().get_active_theme()
     tier_info = f" ({quota.tier_name or quota.tier})" if quota.tier else ""
     title = f"[{th.title_style}]AI Model Quota — {quota.email}{tier_info}[/{th.title_style}]"
-    table = Table(title=title, box=DEFAULT_BOX, header_style=th.header_style, title_justify="left")
+    table = Table(title=title, box=DEFAULT_BOX, header_style=th.header_style, title_justify="left", expand=True)
 
     table.add_column("Model", style="bold white", min_width=28)
     table.add_column("Available Quota", min_width=24)
@@ -114,6 +115,7 @@ def render_top_conversations_table(report: DeepUsageReport) -> Table:
         box=DEFAULT_BOX,
         header_style=th.header_style,
         title_justify="left",
+        expand=True,
     )
     table.add_column("#", style=th.dim_style, justify="right", width=3)
     table.add_column("Conversation", style="bold white", no_wrap=True, max_width=32)
