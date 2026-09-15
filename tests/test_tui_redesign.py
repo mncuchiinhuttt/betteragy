@@ -54,7 +54,7 @@ def test_firework_rocket_burst():
 
 
 def test_render_fireworks_frame():
-    """Verify fireworks frame renders celebration banner and borders."""
+    """Verify fireworks frame renders celebration banner, borders, and ESC prompt."""
     particles = [Particle(25.0, 10.0, 0.0, 0.0, "bright_yellow", life=10)]
     frame = render_fireworks_frame(
         width=80,
@@ -65,6 +65,15 @@ def test_render_fireworks_frame():
     )
     assert frame is not None
     assert "AI Quota Restored Celebration!" in frame.plain
+    assert ">> Press [ESC] or [q] to return to TUI <<" in frame.plain
+
+
+def test_play_fireworks_celebration_finite_duration():
+    """Verify play_fireworks_celebration terminates cleanly when duration is specified."""
+    from betteragy.ui.fireworks import play_fireworks_celebration
+    console = Console(width=80, height=24)
+    # Run a short 0.05s burst
+    play_fireworks_celebration(console, duration=0.05)
 
 
 def test_render_active_overview_card():

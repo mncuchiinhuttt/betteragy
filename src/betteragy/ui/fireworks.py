@@ -7,7 +7,7 @@ from typing import List, Optional, Tuple
 from rich.console import Console
 from rich.text import Text
 
-from .key_listener import KeyListener
+from .key_listener import KEY_BACK, KEY_ESC, KEY_QUIT, KeyListener
 from .theme_manager import get_theme_manager
 
 SPARK_CHARS = ["*", "+", "o", "x", ".", "•", "✦", "✧"]
@@ -102,11 +102,12 @@ def render_fireworks_frame(
                 color_grid[iy][ix] = r.color
 
     banner = [
-        f" +------------------------------------------------------------+ ",
-        f" |       [*]  AI MODEL QUOTA RESTORED! CELEBRATION  [*]       | ",
+        " +------------------------------------------------------------+ ",
+        " |       [*]  AI MODEL QUOTA RESTORED! CELEBRATION  [*]       | ",
         f" |        {title[:48]:^48}        | ",
-        f" |         Gemini 3.1 Pro, Flash & Claude Ready!              | ",
-        f" +------------------------------------------------------------+ ",
+        " |         Gemini 3.1 Pro, Flash & Claude Ready!              | ",
+        " |          >> Press [ESC] or [q] to return to TUI <<         | ",
+        " +------------------------------------------------------------+ ",
     ]
     b_start_y = max(2, (height - len(banner)) // 2)
     b_w = len(banner[0])
@@ -119,7 +120,7 @@ def render_fireworks_frame(
                 gx = b_start_x + c_idx
                 if 0 <= gx < width:
                     grid[gy][gx] = ch
-                    color_grid[gy][gx] = "bold yellow" if r_idx in (1, 3) else "bold white"
+                    color_grid[gy][gx] = "bold cyan" if r_idx == 4 else ("bold yellow" if r_idx in (1, 3) else "bold white")
 
     result = Text()
     for y in range(height):
@@ -136,9 +137,9 @@ def render_fireworks_frame(
 
 
 def play_fireworks_celebration(
-    console: Console, duration: float = 2.4, title: str = "7-Day Quota Refreshed 100%!"
+    console: Console, duration: Optional[float] = None, title: str = "7-Day Quota Refreshed 100%!"
 ) -> None:
-    """Play full terminal firework particle animation, skippable with any key."""
+    """Play full terminal firework particle animation until Escape or q is pressed."""
     width = max(console.width, 70)
     height = max(console.height - 2, 22)
     rockets: List[FireworkRocket] = []
@@ -148,20 +149,22 @@ def play_fireworks_celebration(
     next_rocket_time = 0.0
 
     with KeyListener() as listener:
-        while time.time() - start_time < duration:
+        while True:
             now = time.time()
-            if now >= next_rocket_time and len(rockets) < 6:
+            if duration is not None and duration > 0 and (now - start_time) >= duration:
+                break
+
+            if now >= next_rocket_time and len(rockets) < 7:
                 rx = random.randint(10, width - 10)
                 ty = random.randint(4, height // 2)
                 rockets.append(FireworkRocket(rx, height - 2, ty))
-                next_rocket_time = now + random.uniform(0.2, 0.45)
+                next_rocket_time = now + random.uniform(0.18, 0.4)
 
             for r in list(rockets):
                 new_sparks = r.step()
                 if new_sparks:
                     particles.extend(new_sparks)
-                if r.exploded and not any(p.is_alive for p in particles):
-                    pass
+            rockets = [r for r in rockets if not r.exploded]
 
             for p in list(particles):
                 p.step()
@@ -172,6 +175,6 @@ def play_fireworks_celebration(
             console.print(frame)
 
             key = listener.read_key()
-            if key is not None:
+            if key in (KEY_ESC, KEY_QUIT, "q", "Q", KEY_BACK, "\x1b"):
                 break
-            time.sleep(0.045)
+            time.sleep(0.04)
