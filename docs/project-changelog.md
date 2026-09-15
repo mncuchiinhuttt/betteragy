@@ -30,7 +30,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **True-Green Quota Progress Bar Grading (`theme.py`, `tables.py`, `test_quota.py`, `test_theme.py`)**:
     - Replaced ambiguous ANSI 32 color name with explicit 24-bit TrueColor hex codes (`#16a34a` / `#22c55e` / `#50fa7b` / `#a9dc76` / `#a3be8c`) across all themes, guaranteeing that high quota (>= 50%) is unequivocally vibrant green and never rendered as blue or teal regardless of the terminal emulator's custom ANSI 16 color map.
     - Dynamically themed status badges (`[*] Active`, `[+] Ready`, `[!] Cooldown`, `[x] Disabled`), table titles, headers, borders, cursors, and selection highlights.
-  - **Comprehensive Unit & Integration Test Suite (`test_theme.py`, `test_cert_service.py`, `test_proxy.py`, `test_proxy_tui.py`, `test_auto_config.py`, `test_quota.py`, `test_interactive_tui.py`)**: Full automated test coverage with 76/76 tests passing.
+  - **Comprehensive Unit & Integration Test Suite (`test_theme.py`, `test_cert_service.py`, `test_proxy.py`, `test_proxy_tui.py`, `test_auto_config.py`, `test_quota.py`, `test_interactive_tui.py`, `test_agent_cmd.py`)**: Full automated test coverage with 78/78 tests passing.
+  - **Agent Tool Auto-Approval (`agent_cmd.py`, `test_agent_cmd.py`)**:
+    - Added `--dangerously-skip-permissions` (`-y`, default enabled) to `betteragy agent` and `betteragy agent run`, auto-approving all tool permission requests without interrupting autonomous workflows.
+    - Updated `betteragy agent setup-alias` to configure `alias agy="agy --effort high --dangerously-skip-permissions"`.
+  - **OMP Battle-Tested Superpowers Synthesis (`strict_harness.md`, `balanced_harness.md`, `harness_service.py`)**:
+    - Scanned Oh My Pi (`@oh-my-pi/pi-coding-agent`) architecture and integrated proven invariants:
+      - **Inviolable Delivery Contract**: Never yield while actionable work remains in the turn; phase boundaries and to-do updates never pause execution; strictly zero mocks, stubs, or `TODO: implement` placeholders.
+      - **User Ground-Truth Axiom**: User-reported observations, errors, and terminal logs are ground truth; never waste turns re-running checks to confirm what the user reported.
+      - **Clean Cutover Rule**: When refactoring interfaces, update all callers across the codebase and purge obsolete code and deprecated shims.
+      - **Anti-Spinning Loop Guards**: Detect and immediately break circular thinking/deliberation loops by picking the most boring viable choice and making a concrete tool call; prevent repetitive failing tool calls.
+      - **Task Batching & Smoke Testing**: Prohibit isolated to-do calls (always batch with real edits/tests); conduct live behavioral smoke testing on CLIs and servers.
 
 ## [1.1.0] - 2026-09-14
 
