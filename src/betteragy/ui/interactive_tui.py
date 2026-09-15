@@ -123,11 +123,13 @@ class InteractiveTUI:
             sys.stdout.flush()
 
     def _render_current_view(self) -> None:
-        """Render active screen elements to terminal."""
-        sys.stdout.write("\033[2J\033[H")
-        sys.stdout.flush()
+        """Render active screen elements to terminal with zero-flicker double buffering."""
         elements = build_screen_elements(self)
-        self.console.print(Group(*elements))
+        with self.console.capture() as capture:
+            self.console.print(Group(*elements))
+        frame = capture.get()
+        sys.stdout.write(f"\033[?2025h\033[H{frame}\033[J\033[?2025l")
+        sys.stdout.flush()
 
     def _fetch_active_quota(self, email: str):
         """Fetch quota and trigger celebration if any model quota reset from exhaustion."""
@@ -174,26 +176,18 @@ class InteractiveTUI:
     def _dispatch_action(self, action: str) -> bool:
         """Dispatch enter key action on selected main menu item."""
         return dispatch_main_menu_action(self, action)
-
     def _handle_account_list_key(self, key: str) -> bool:
         return handle_account_list_key(self, key)
-
     def _handle_add_account_key(self, key: str) -> None:
         handle_add_account_key(self, key)
-
     def _handle_tasks_key(self, key: str) -> bool:
         return handle_tasks_key(self, key)
-
     def _handle_session_selector_key(self, key: str) -> bool:
         return handle_session_selector_key(self, key)
-
     def _handle_proxy_key(self, key: str) -> bool:
         return handle_proxy_key(self, key)
-
     def _handle_theme_key(self, key: str) -> bool:
         return handle_theme_key(self, key)
-
-
 def run_interactive_tui():
     """Launch the interactive TUI application."""
     app = InteractiveTUI()
