@@ -1,7 +1,7 @@
 """Account pool service: account CRUD, switching, and auto-import."""
 
-import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 from ..core.config import read_accounts_storage, write_accounts_storage
@@ -23,54 +23,61 @@ class AccountService:
             self._auto_sync_from_keyring()
         return self._storage
 
-    def _auto_sync_from_keyring(self) -> None:
-        """Inspect active keychain credential and import into accounts pool if not present."""
-        if not self._storage:
-            return
-        active_cred = KeyringAdapter.read_active_credential()
-        if not active_cred or "token" not in active_cred:
-            return
-        token_info = active_cred["token"]
-        refresh_token = token_info.get("refresh_token")
-        access_token = token_info.get("access_token")
-        if not refresh_token:
-            return
-
-        if any(a.refresh_token == refresh_token for a in self._storage.accounts):
-            return
-
+    def import_from_omp(self) -> int:
+        """Auto-import Google Antigravity accounts from Oh My Pi (OMP) credentials database."""
+        omp_db = Path.home() / ".omp" / "agent" / "agent.db"
+        if not omp_db.exists() or not self._storage:
+            return 0
+        imported = 0
         try:
-            uinfo = None
-            if access_token:
-                try:
-                    uinfo = fetch_user_info(access_token)
-                except Exception:
-                    pass
+            import sqlite3
+            import json
+            con = sqlite3.connect(str(omp_db), timeout=0.2)
+            cur = con.cursor()
+            cur.execute("SELECT data FROM auth_credentials WHERE provider = 'google-antigravity'")
+            rows = cur.fetchall()
+            con.close()
+            existing = {a.email.lower(): a for a in self._storage.accounts}
+            for (raw,) in rows:
+                d = json.loads(raw)
+                em, ref = d.get("email"), d.get("refresh")
+                if em and ref and em.lower() not in existing:
+                    acc = AccountRecord(
+                        email=em, name=em.split("@")[0], refresh_token=ref,
+                        access_token=d.get("access") or "", tier="g1-pro-tier", tier_name="Google AI Pro",
+                    )
+                    self._storage.accounts.append(acc)
+                    existing[em.lower()] = acc
+                    imported += 1
+            if imported:
+                write_accounts_storage(self._storage)
+        except Exception:
+            pass
+        return imported
+
+    def _auto_sync_from_keyring(self) -> None:
+        """Inspect active keychain and OMP credentials, auto-importing new accounts."""
+        if not self._storage: return
+        self.import_from_omp()
+        cred = KeyringAdapter.read_active_credential()
+        if not cred or "token" not in cred: return
+        t_info = cred["token"]
+        rf, acc_tok = t_info.get("refresh_token"), t_info.get("access_token")
+        if not rf or any(a.refresh_token == rf for a in self._storage.accounts): return
+        try:
+            uinfo = fetch_user_info(acc_tok) if acc_tok else None
             if not uinfo or "email" not in uinfo:
-                tokens = refresh_access_token(refresh_token)
-                access_token = tokens.get("access_token")
-                uinfo = fetch_user_info(access_token)
-
-            email = uinfo.get("email")
-            if not email:
-                return
-
-            existing = next((a for a in self._storage.accounts if a.email.lower() == email.lower()), None)
-            if existing:
-                existing.refresh_token = refresh_token
-                existing.access_token = access_token or existing.access_token
+                tokens = refresh_access_token(rf); acc_tok = tokens.get("access_token"); uinfo = fetch_user_info(acc_tok)
+            em = uinfo.get("email")
+            if not em: return
+            ex = next((a for a in self._storage.accounts if a.email.lower() == em.lower()), None)
+            if ex:
+                ex.refresh_token, ex.access_token = rf, acc_tok or ex.access_token
             else:
-                acc = AccountRecord(
-                    email=email,
-                    name=uinfo.get("name", ""),
-                    picture=uinfo.get("picture", ""),
-                    refresh_token=refresh_token,
-                    access_token=access_token or "",
-                    expiry=token_info.get("expiry", ""),
-                    last_used=time.time(),
-                )
-                self._storage.accounts.append(acc)
-
+                self._storage.accounts.append(AccountRecord(
+                    email=em, name=uinfo.get("name", ""), picture=uinfo.get("picture", ""),
+                    refresh_token=rf, access_token=acc_tok or "", expiry=t_info.get("expiry", ""), last_used=time.time(),
+                ))
             write_accounts_storage(self._storage)
         except Exception:
             pass
@@ -92,14 +99,10 @@ class AccountService:
         existing = next((a for a in storage.accounts if a.email.lower() == record.email.lower()), None)
         if existing:
             existing.refresh_token = record.refresh_token
-            if record.access_token:
-                existing.access_token = record.access_token
-            if record.expiry:
-                existing.expiry = record.expiry
-            if record.name:
-                existing.name = record.name
-            if record.picture:
-                existing.picture = record.picture
+            if record.access_token: existing.access_token = record.access_token
+            if record.expiry: existing.expiry = record.expiry
+            if record.name: existing.name = record.name
+            if record.picture: existing.picture = record.picture
         else:
             storage.accounts.append(record)
 

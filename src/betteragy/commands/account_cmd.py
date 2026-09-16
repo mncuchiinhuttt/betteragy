@@ -28,6 +28,15 @@ def account_list():
     console.print(render_accounts_table(accounts, storage.active_email))
 
 
+@account_app.command("import-omp")
+def account_import_omp():
+    """Import Google Antigravity credentials from Oh My Pi (OMP)."""
+    count = acc_svc.import_from_omp()
+    if count > 0:
+        console.print(f"[bold green][ok] Imported {count} new account(s) from OMP.[/bold green]")
+    else:
+        console.print("[dim]All OMP Antigravity accounts are already imported.[/dim]")
+
 @account_app.command("switch")
 def account_switch(identifier: str = typer.Argument(..., help="Account index or email")):
     """Switch active account session for agy CLI and system keyring."""
