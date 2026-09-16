@@ -23,7 +23,7 @@ MAIN_MENU_ITEMS = [
     ("[9] Auto-Rotation Proxy", "Background MITM proxy daemon with 429 auto-swap"),
     ("[t] Color Themes", "Select palette (Warm, Emerald, Cyber, Dracula)"),
     ("[u] Check for Updates", "Check GitHub releases for latest version"),
-    ("[x] Exit", "Return to shell prompt"),
+    ("[q] Exit", "Return to shell prompt"),
 ]
 
 ADD_ACCOUNT_METHODS = [
