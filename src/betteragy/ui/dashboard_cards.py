@@ -39,7 +39,7 @@ def render_active_overview_card(
 
     return Panel(
         t,
-        title=f"[{th.title_style}]:: System Overview ::[/{th.title_style}]",
+        title=f"[{th.title_style}]◉ System Telemetry[/{th.title_style}]",
         border_style=th.border_style,
         box=DEFAULT_BOX,
     )
@@ -90,7 +90,7 @@ def render_mini_quota_card(cached_quota: Optional[AccountQuota]) -> Panel:
         msg = Text("  Live quota not cached.\n  Press [2] to refresh model limits.", style=th.dim_style)
         return Panel(
             msg,
-            title=f"[{th.title_style}]:: Live Quota Snapshot ::[/{th.title_style}]",
+            title=f"[{th.title_style}]◉ Model Quota Snapshot[/{th.title_style}]",
             border_style=th.dim_style,
             box=DEFAULT_BOX,
         )
@@ -109,7 +109,7 @@ def render_mini_quota_card(cached_quota: Optional[AccountQuota]) -> Panel:
 
     return Panel(
         content,
-        title=f"[{th.title_style}]:: Model Quota Snapshot ::[/{th.title_style}]",
+        title=f"[{th.title_style}]◉ Model Quota Snapshot[/{th.title_style}]",
         border_style=th.border_style,
         box=DEFAULT_BOX,
     )

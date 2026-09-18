@@ -21,7 +21,7 @@ def render_theme_selector_panel(
     active_th = th_mgr.get_active_theme()
 
     table = Table(box=DEFAULT_BOX, header_style=active_th.header_style, padding=(0, 1))
-    table.add_column("Cursor", width=3, justify="center")
+    table.add_column("Chip", width=4, justify="center")
     table.add_column("#", style=active_th.dim_style, width=3, justify="right")
     table.add_column("Theme Name", min_width=18, no_wrap=True)
     table.add_column("Palette Style", style=active_th.dim_style, min_width=32, no_wrap=True)
@@ -30,7 +30,7 @@ def render_theme_selector_panel(
     for i, item in enumerate(themes):
         is_sel = i == selected_idx
         is_active = item.id == active_theme_id
-        cursor = f"[{active_th.cursor_style}]>[/{active_th.cursor_style}]" if is_sel else " "
+        cursor = f"[{active_th.cursor_style}]❯[/{active_th.cursor_style}]" if is_sel else f"[{active_th.dim_style}]·[/{active_th.dim_style}]"
 
         active_mark = f" [{item.quota_high}][*] Active[/{item.quota_high}]" if is_active else ""
         name_str = f"{item.name}{active_mark}"
@@ -45,7 +45,7 @@ def render_theme_selector_panel(
     )
     return Panel(
         Group(table, instructions),
-        title=f"[{active_th.title_style}]:: Color Theme Catalog ::[/{active_th.title_style}]",
+        title=f"[{active_th.title_style}]◉ Color Theme Catalog[/{active_th.title_style}]",
         border_style=active_th.border_style,
         box=DEFAULT_BOX,
     )

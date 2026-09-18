@@ -41,29 +41,30 @@ def render_main_menu_panel(
     """Render the categorized main interactive menu with dynamic active theme styling."""
     th = get_theme_manager().get_active_theme()
     header = Text()
-    header.append("Betteragy", style=th.title_style)
+    header.append("╭─ ", style="dim cyan")
+    header.append("betteragy", style="bold cyan")
     header.append(f" v{__version__}", style=th.subtitle_style)
     if update_ver:
         header.append(f" [update: v{update_ver}]", style=f"bold {th.quota_high}")
-    header.append(" -- Command Center", style="bold white")
-    header.append("  by @mncuchiinhuttt aka. Long Minh Vo\n", style=th.dim_style)
+    header.append(" ─", style="dim cyan")
+    header.append(" terminal agent command center\n", style=th.dim_style)
 
     menu_table = Table(box=None, show_header=False, pad_edge=False, padding=(0, 1))
-    menu_table.add_column("Cursor", width=3, justify="center")
-    menu_table.add_column("Action", style="bold white", width=27)
+    menu_table.add_column("Chip", width=4, justify="center")
+    menu_table.add_column("Action", style="bold white", width=26)
     menu_table.add_column("Description", style=th.dim_style, min_width=35)
 
     for i, (title, desc) in enumerate(MAIN_MENU_ITEMS):
         is_sel = i == selected_idx
-        cursor = f"[{th.cursor_style}]>[/{th.cursor_style}]" if is_sel else " "
+        chip = f"[{th.cursor_style}]❯[/{th.cursor_style}]" if is_sel else f"[{th.dim_style}]·[/{th.dim_style}]"
         t_style = th.sel_style if is_sel else "bold white"
-        d_style = th.dim_style if not is_sel else th.sel_style
-        menu_table.add_row(cursor, Text(title, style=t_style), Text(desc, style=d_style))
+        d_style = th.sel_style if is_sel else th.dim_style
+        menu_table.add_row(chip, Text(title, style=t_style), Text(desc, style=d_style))
 
     content = Group(header, menu_table)
     return Panel(
         content,
-        title=f"[{th.title_style}]:: Command Menu ::[/{th.title_style}]",
+        title=f"[{th.title_style}]◉ Betteragy Harness Gateway[/{th.title_style}]",
         border_style=th.border_style,
         box=DEFAULT_BOX,
     )
@@ -79,7 +80,7 @@ def render_account_selector_panel(
     """Render list of accounts navigable by arrow keys."""
     th = get_theme_manager().get_active_theme()
     table = Table(box=DEFAULT_BOX, header_style=th.header_style, padding=(0, 1))
-    table.add_column("Cursor", width=3, justify="center")
+    table.add_column("Chip", width=4, justify="center")
     table.add_column("#", style=th.dim_style, width=3, justify="right")
     table.add_column("Account / Email", min_width=26)
     table.add_column("Status", justify="center", width=16)
@@ -91,7 +92,7 @@ def render_account_selector_panel(
         badge = format_status_badge(is_active, False, acc.disabled, theme=th)
         tier_str = format_tier_name(acc.tier_name, acc.tier)
 
-        cursor = f"[{th.cursor_style}]>[/{th.cursor_style}]" if is_sel else " "
+        cursor = f"[{th.cursor_style}]❯[/{th.cursor_style}]" if is_sel else f"[{th.dim_style}]·[/{th.dim_style}]"
         row_style = th.sel_style if is_sel else None
         table.add_row(cursor, str(i + 1), acc.email, badge, tier_str, style=row_style)
 
@@ -111,16 +112,16 @@ def render_add_account_panel(selected_idx: int) -> Panel:
     """Render the Add Account method selection panel."""
     th = get_theme_manager().get_active_theme()
     table = Table(box=None, show_header=False, pad_edge=False, padding=(0, 1))
-    table.add_column("Cursor", width=3, justify="center")
+    table.add_column("Chip", width=4, justify="center")
     table.add_column("Method", style="bold white", width=28)
     table.add_column("Description", style=th.dim_style, min_width=45)
 
     for i, (title, desc) in enumerate(ADD_ACCOUNT_METHODS):
         is_sel = i == selected_idx
-        cursor = f"[{th.cursor_style}]>[/{th.cursor_style}]" if is_sel else " "
+        chip = f"[{th.cursor_style}]❯[/{th.cursor_style}]" if is_sel else f"[{th.dim_style}]·[/{th.dim_style}]"
         t_style = th.sel_style if is_sel else "bold white"
-        d_style = th.dim_style if not is_sel else th.sel_style
-        table.add_row(cursor, Text(title, style=t_style), Text(desc, style=d_style))
+        d_style = th.sel_style if is_sel else th.dim_style
+        table.add_row(chip, Text(title, style=t_style), Text(desc, style=d_style))
 
     instructions = Text("\n[Up/Down] Navigate  |  [Enter] Select Method  |  [Esc/b] Cancel", style=th.dim_style)
     return Panel(

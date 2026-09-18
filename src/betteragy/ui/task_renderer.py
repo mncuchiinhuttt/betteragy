@@ -40,8 +40,8 @@ def render_ascii_task_board(
         ))
         return Panel(
             empty_grid,
-            title="[*] Betteragy Task Board",
-            subtitle="[dim]←/→ Switch Tab  |  [s] Sessions List  |  [c] Clear Tasks[/dim]",
+            title="[bold cyan]◉ Betteragy Task Board[/bold cyan]",
+            subtitle="[dim]←/→ Switch Tab  |  [s] Sessions  |  [c] Clear Tasks[/dim]",
             border_style="cyan",
         )
 
@@ -54,25 +54,24 @@ def render_ascii_task_board(
     progress_bar = f"\\[{'#' * filled_len}{'-' * (bar_len - filled_len)}]"
 
     table = Table(show_header=True, header_style="bold white", box=None, padding=(0, 1))
-    table.add_column("Cursor", width=3, justify="center")
+    table.add_column("Chip", width=4, justify="center")
     table.add_column("Status", width=6, justify="center")
     table.add_column("ID", width=4, justify="right", style="dim")
     table.add_column("Task Title", ratio=1, no_wrap=True)
     table.add_column("Priority", width=8, justify="center")
     status_styles = {
-        "pending": ("[ ]", "dim white"),
-        "in_progress": ("[>]", "bold yellow"),
-        "completed": ("[ok]", "bold green"),
-        "blocked": ("[x]", "bold red"),
+        "pending": ("◻", "dim white"),
+        "in_progress": ("◼", "bold yellow"),
+        "completed": ("✔", "bold green"),
+        "blocked": ("✕", "bold red"),
     }
-
     sel_task = None
     for i, t in enumerate(tasks):
         is_sel = selected_task_idx is not None and i == selected_task_idx
         if is_sel:
             sel_task = t
-        cursor = ">" if is_sel else " "
-        icon, style = status_styles.get(t["status"], ("[?]", "white"))
+        cursor = "❯" if is_sel else " "
+        icon, style = status_styles.get(t["status"], ("·", "white"))
         status_cell = Text(icon, style="bold cyan" if is_sel else style)
         title_text = Text(t["title"], style="bold cyan" if is_sel else style)
         pri_color = {"high": "bold red", "medium": "yellow", "low": "cyan"}.get(t["priority"], "white")
@@ -91,12 +90,12 @@ def render_ascii_task_board(
     content.add_row(summary_text)
     content.add_row(table)
     if sel_task and (sel_task.get("evidence") or sel_task.get("description")):
-        detail = Text("\n>> Task Detail: ", style="bold cyan")
+        detail = Text("\n⎿ Execution Detail: ", style="bold cyan")
         detail.append(sel_task.get("evidence") or sel_task.get("description") or "", style="dim green" if sel_task.get("evidence") else "dim")
         content.add_row(detail)
 
     return Panel(
         content,
-        title="[*] Betteragy Task Board",
+        title="[bold cyan]◉ Betteragy Task Board[/bold cyan]",
         subtitle=f"[dim]↑/↓ Select Task  |  Space Toggle Status  |  [c] Clear Tasks  |  ←/→ Tab #{session['id'] if session else 'N/A'}[/dim]",
     )
