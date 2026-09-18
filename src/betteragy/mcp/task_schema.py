@@ -36,10 +36,19 @@ CREATE TABLE IF NOT EXISTS checkpoints (
     created_at TEXT NOT NULL,
     FOREIGN KEY(session_id) REFERENCES sessions(id)
 );
+CREATE TABLE IF NOT EXISTS memories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key TEXT UNIQUE NOT NULL,
+    content TEXT NOT NULL,
+    category TEXT DEFAULT 'rule',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS idx_tasks_session ON tasks(session_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
 CREATE INDEX IF NOT EXISTS idx_checkpoints_session ON checkpoints(session_id);
 CREATE INDEX IF NOT EXISTS idx_checkpoints_name ON checkpoints(name);
+CREATE INDEX IF NOT EXISTS idx_memories_key ON memories(key);
 """
 
 

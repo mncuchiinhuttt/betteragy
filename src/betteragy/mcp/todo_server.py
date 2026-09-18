@@ -33,8 +33,8 @@ class TodoServer:
                 {
                     "supportedVersions": ["2026-07-28", "2025-11-25", "2024-11-05"],
                     "capabilities": {"tools": {"listChanged": False}},
-                    "serverInfo": {"name": "betteragy-todo", "version": "0.3.0"},
-                    "instructions": "Betteragy Agent Control Suite: task tracking, quota intelligence, checkpoints, and delegation.",
+                    "serverInfo": {"name": "betteragy-todo", "version": "1.0.0"},
+                    "instructions": "Betteragy Agent Control Suite: task tracking, quota intelligence, persistent memory & rules, checkpoints, and subagent delegation.",
                 },
             )
         elif method == "initialize":
@@ -44,8 +44,8 @@ class TodoServer:
                 {
                     "protocolVersion": client_version,
                     "capabilities": {"tools": {"listChanged": False}},
-                    "serverInfo": {"name": "betteragy-todo", "version": "0.3.0"},
-                    "instructions": "Betteragy Agent Control Suite: task tracking, quota intelligence, checkpoints, and delegation.",
+                    "serverInfo": {"name": "betteragy-todo", "version": "1.0.0"},
+                    "instructions": "Betteragy Agent Control Suite: task tracking, quota intelligence, persistent memory & rules, checkpoints, and subagent delegation.",
                 },
             )
         elif method == "tools/list":

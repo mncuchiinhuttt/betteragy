@@ -49,9 +49,9 @@ def test_render_statusline_hud_with_tokens_and_duration():
         hud = render_statusline_hud(payload)
         assert "Claude-Sonnet" in hud
         assert "3.4s" in hud
-        assert "In:" in hud and "1.5k" in hud
-        assert "Out:" in hud and "200" in hud
-        assert "Cache:" in hud and "28.0k" in hud
+        assert "1.5k" in hud
+        assert "200" in hud
+        assert "28.0k" in hud
         assert "50%" in hud
 
 

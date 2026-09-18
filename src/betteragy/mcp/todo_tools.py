@@ -16,6 +16,12 @@ from betteragy.mcp.quota_tools import (
     handle_account_switch,
     handle_quota_status,
 )
+from betteragy.mcp.memory_tools import (
+    MEMORY_TOOL_DEFINITIONS,
+    handle_memory_remember,
+    handle_memory_recall,
+    handle_memory_forget,
+)
 from betteragy.mcp.task_db import TaskDB
 from betteragy.mcp.tree_formatter import check_dependencies, format_tasks_ascii_tree
 
@@ -90,7 +96,7 @@ TODO_TOOL_DEFINITIONS = [
     },
 ]
 
-ALL_TOOL_DEFINITIONS = TODO_TOOL_DEFINITIONS + QUOTA_TOOL_DEFINITIONS + CHECKPOINT_TOOL_DEFINITIONS
+ALL_TOOL_DEFINITIONS = TODO_TOOL_DEFINITIONS + QUOTA_TOOL_DEFINITIONS + CHECKPOINT_TOOL_DEFINITIONS + MEMORY_TOOL_DEFINITIONS
 TOOL_DEFINITIONS = ALL_TOOL_DEFINITIONS
 
 
@@ -119,7 +125,12 @@ def execute_tool(name: str, args: Dict[str, Any], db: TaskDB, cp_db: Optional[Ch
         return handle_checkpoint_resume(args, cp_db)
     if name == "checkpoint_list":
         return handle_checkpoint_list(args, cp_db)
-
+    if name == "memory_remember":
+        return handle_memory_remember(args, db)
+    if name == "memory_recall":
+        return handle_memory_recall(args, db)
+    if name == "memory_forget":
+        return handle_memory_forget(args, db)
     if name == "todo_init":
         session_id = db.init_session(
             goal=args.get("goal", ""),

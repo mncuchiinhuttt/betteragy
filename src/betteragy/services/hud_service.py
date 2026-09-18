@@ -96,7 +96,7 @@ def get_prompt_duration(conversation_id: str, transcript_hint: Optional[str] = N
 
 
 def render_statusline_hud(payload: dict) -> str:
-    """Render high-contrast, compact ANSI statusline HUD from agy payload."""
+    """Render a premium Powerline pill-style statusline HUD with ANSI 24-bit TrueColor."""
     model_info = payload.get("model") or {}
     model_name = model_info.get("display_name") or model_info.get("id") or "Gemini"
     short_model = model_name.replace("Gemini ", "Gemini-").replace("Claude ", "Claude-")
@@ -106,52 +106,36 @@ def render_statusline_hud(payload: dict) -> str:
     transcript_path = payload.get("transcript_path")
     agent_state = payload.get("agent_state") or ""
 
-    # 1. Tokens
     inp, out, cache, reas = get_latest_turn_tokens(cid)
-
-    # 2. Duration
     dur = get_prompt_duration(cid, transcript_path, agent_state)
 
-    # 3. Quota
     quota_info = payload.get("quota") or {}
     quota_5h = quota_info.get("gemini-5h") or quota_info.get("3p-5h") or {}
     remaining_pct = int(quota_5h.get("remaining_fraction", 1.0) * 100)
 
-    # ANSI Colors
-    CYAN = "\033[1;36m"
-    GREEN = "\033[1;32m"
-    YELLOW = "\033[1;33m"
-    MAGENTA = "\033[1;35m"
-    WHITE = "\033[1;37m"
-    DIM = "\033[2m"
-    RESET = "\033[0m"
-
-    parts = []
-
-    # Model pill
-    effort_str = f"/{effort}" if effort else ""
-    parts.append(f"{CYAN}[{short_model}{effort_str}]{RESET}")
+    # TrueColor ANSI Powerline Badges
+    # Model pill: Deep Indigo background with white text
+    effort_suffix = f":{effort}" if effort else ""
+    model_badge = f"\033[48;2;30;41;59m\033[38;2;241;245;249m\033[1m ◉ {short_model}{effort_suffix} \033[0m"
 
     # Duration pill
     if dur > 0:
-        dur_color = GREEN if dur < 5.0 else (YELLOW if dur < 15.0 else "\033[1;31m")
-        parts.append(f"{dur_color}⚡ {dur:.1f}s{RESET}")
+        dur_bg = "48;2;16;185;129m" if dur < 5.0 else ("48;2;217;119;6m" if dur < 15.0 else "48;2;239;68;68m")
+        dur_badge = f"\033[{dur_bg}\033[38;2;15;23;42m\033[1m ⚡ {dur:.1f}s \033[0m"
+    else:
+        dur_badge = ""
 
-    # Token pill
+    # Tokens pill
     if inp > 0 or out > 0 or cache > 0:
-        cache_ratio = f" ({int(cache / (cache + inp) * 100)}%)" if (cache + inp) > 0 and cache > 0 else ""
-        token_str = (
-            f"{DIM}In:{RESET}{WHITE}{format_token_count(inp)}{RESET} "
-            f"{DIM}Out:{RESET}{WHITE}{format_token_count(out)}{RESET} "
-            f"{DIM}Cache:{RESET}{GREEN}{format_token_count(cache)}{cache_ratio}{RESET}"
-        )
-        if reas > 0:
-            token_str += f" {MAGENTA}🧠 {format_token_count(reas)}{RESET}"
-        parts.append(token_str)
+        cache_str = f"|C:{format_token_count(cache)}" if cache > 0 else ""
+        reas_str = f"|🧠{format_token_count(reas)}" if reas > 0 else ""
+        tok_badge = f"\033[48;2;15;23;42m\033[38;2;148;163;184m ↑{format_token_count(inp)} ↓{format_token_count(out)}{cache_str}{reas_str} \033[0m"
+    else:
+        tok_badge = ""
 
     # Quota pill
-    q_color = GREEN if remaining_pct >= 50 else (YELLOW if remaining_pct >= 20 else "\033[1;31m")
-    parts.append(f"{DIM}5h:{RESET}{q_color}{remaining_pct}%{RESET}")
+    q_color = "\033[38;2;52;211;153m" if remaining_pct >= 50 else ("\033[38;2;251;191;36m" if remaining_pct >= 20 else "\033[38;2;248;113;113m")
+    quota_badge = f"\033[48;2;30;41;59m {q_color}\033[1m5h:{remaining_pct}%\033[0m\033[48;2;30;41;59m \033[0m"
 
-    # Separator
-    return f" {DIM}|{RESET} ".join(parts)
+    pills = [p for p in [model_badge, dur_badge, tok_badge, quota_badge] if p]
+    return " ".join(pills)

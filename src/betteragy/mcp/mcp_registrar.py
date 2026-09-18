@@ -43,8 +43,10 @@ class MCPRegistrar:
         return modified
 
     def install(self, python_path: str | None = None) -> Dict[str, Any]:
-        """Register betteragy-todo server in agy configs."""
-        py_exe = python_path or sys.executable
+        """Register betteragy-todo server in agy configs with reliable python binary."""
+        import shutil
+        uv_tool_py = Path.home() / ".local" / "share" / "uv" / "tools" / "betteragy" / "bin" / "python"
+        py_exe = python_path or (str(uv_tool_py) if uv_tool_py.exists() else shutil.which("python3") or sys.executable)
         server_entry = {
             "command": py_exe,
             "args": ["-m", "betteragy.mcp.todo_server"],

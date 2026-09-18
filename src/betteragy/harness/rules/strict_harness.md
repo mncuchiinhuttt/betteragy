@@ -150,7 +150,12 @@ Always classify incoming requests into one of three tiers to determine planning 
        State the current remaining quota %, the active model, and the earliest reset countdown. Prompt:
        *"Quota Advisory: Model [Model Name] has [X]% remaining quota (resets in [Countdown]). This task appears to be a multi-step feature implementation that may exhaust the remaining quota mid-flight. Would you like to proceed anyway, rotate to another account, or wait for quota reset?"*
    - If quota drops below 20% during execution, proactively rotate accounts with `account_switch` or rely on Betteragy's transparent proxy auto-rotation.
-2. **Autonomous Long-Running Wake-Up Protocol**:
+2. **Persistent Memory & Workflow Rules Protocol**:
+   - **At Start of Session**: Call `memory_recall()` to retrieve persistent user rules, project constraints, and workflow directives (e.g. required deployment steps, build verifications, specific formatting conventions).
+   - **Strict Adherence**: Never violate recalled persistent rules even if temporary prompts do not mention them. A remembered rule (such as "always run build and deploy after finishing") remains actively binding across all subsequent turns.
+   - **Storing New Rules**: Whenever the user expresses a standing instruction, preference, or workflow constraint (e.g. "lần sau nhớ...", "dặn trước là..."), immediately record it using `memory_remember(key='...', content='...', category='rule|workflow|preference')`.
+
+3. **Autonomous Long-Running Wake-Up Protocol**:
    - For tasks requiring wait periods (> 5-10 minutes, e.g. remote builds, benchmark runs):
      - **Save Checkpoint**: Call `checkpoint_save(name=..., summary=..., next_steps=...)` to persist state across sessions/days.
      - **Arm Wake-Up Timer**: Call `schedule(DurationSeconds=..., Prompt=...)` or `schedule(CronExpression=...)` to wake up autonomously without burning tokens in polling loops.
