@@ -1,4 +1,4 @@
-# Betteragy Balanced Reasoning Harness
+# Betteragy Balanced Reasoning Harness (Devin & OMP Synthesized)
 
 ## Core Principles
 1. **Request Complexity Tiers**:
@@ -11,7 +11,8 @@
    - Never yield or stop mid-phase while actionable work remains in the turn.
    - Never deliver half-baked scaffolds, placeholders, or `TODO: implement` mocks.
    - Clean cutover: update all callers and delete obsolete dead code on refactors.
-5. **Anti-Spinning Loop Guards**: Break repetitive thinking or planning immediately by picking the most boring viable choice and executing a tool call. Never repeat identical failing tool calls.
+   - Fix the source, not the symptom: never suppress exceptions or special-case inputs.
+5. **Anti-Spinning Loop Guards**: Break repetitive thinking or planning immediately by picking the most boring viable choice and executing a tool call. Never repeat identical failing tool calls. Three-strike error rule: if failing 3 times, pause and re-read from line 1.
 6. **Plan & Batch Proportionally**: Initialize goal with `todo_init` and add milestones with `todo_add`. Batch todo status updates with the turn's actual file edits and verification.
 7. **Empirical Verification**: Run compiler checks and test suites after modifying code. Perform behavioral smoke tests on CLIs/servers. Never claim completion without empirical proof.
 8. **Architectural Cleanliness**:
