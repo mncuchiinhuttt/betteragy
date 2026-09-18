@@ -63,10 +63,25 @@ class TaskDB:
             ).fetchone()
             return dict(row) if row else None
 
-    def get_active_session(self, session_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
+    def get_active_session(self, session_id: Optional[int] = None, working_dir: Optional[str] = None) -> Optional[Dict[str, Any]]:
         if session_id is not None:
             return self.get_session(session_id)
         with self._get_connection() as conn:
+            if working_dir:
+                norm_dir = os.path.abspath(working_dir)
+                rows = conn.execute(
+                    "SELECT s.*, COUNT(t.id) as total_tasks, "
+                    "SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) as completed_tasks "
+                    "FROM sessions s LEFT JOIN tasks t ON s.id = t.session_id "
+                    "WHERE s.working_dir != '' GROUP BY s.id "
+                    "ORDER BY s.is_active DESC, COALESCE(NULLIF(s.updated_at, ''), s.created_at) DESC"
+                ).fetchall()
+                for r in rows:
+                    d = dict(r)
+                    sw = os.path.abspath(d["working_dir"])
+                    if norm_dir == sw or norm_dir.startswith(sw + os.sep) or sw.startswith(norm_dir + os.sep):
+                        return d
+                return None
             row = conn.execute(
                 "SELECT s.*, COUNT(t.id) as total_tasks, "
                 "SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) as completed_tasks "
@@ -78,7 +93,6 @@ class TaskDB:
                 return dict(row)
             fallback = conn.execute("SELECT * FROM sessions ORDER BY id DESC LIMIT 1").fetchone()
             return dict(fallback) if fallback else None
-
     def list_sessions(self, limit: int = 20) -> List[Dict[str, Any]]:
         with self._get_connection() as conn:
             rows = conn.execute(

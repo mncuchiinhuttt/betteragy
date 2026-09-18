@@ -133,12 +133,14 @@ def render_statusline_hud(payload: dict) -> str:
     else:
         tok_badge = ""
 
-    # Active task progress pill (from tasks.db)
+    # Active task progress pill (from tasks.db scoped to current project/directory)
     task_badge = ""
     try:
         from ..mcp.task_db import TaskDB
+        import os
+        cwd = payload.get("cwd") or (payload.get("workspace") or {}).get("current_dir") or os.getcwd()
         db = TaskDB()
-        sess = db.get_active_session()
+        sess = db.get_active_session(working_dir=cwd)
         if sess:
             total_t = sess.get("total_tasks") or 0
             comp_t = sess.get("completed_tasks") or 0
