@@ -1,9 +1,9 @@
 """Account pool service: account CRUD, switching, and auto-import."""
 
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
-
 from ..core.config import read_accounts_storage, write_accounts_storage
 from ..core.models import AccountRecord, AccountsStorage
 from .keyring_adapter import KeyringAdapter
