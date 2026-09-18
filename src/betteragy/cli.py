@@ -145,12 +145,17 @@ def menu_command():
 @app.command("onboard")
 def setup_command(
     force: bool = typer.Option(False, "--force", "-f", help="Force rerun onboarding wizard even if already set up"),
+    reset: bool = typer.Option(False, "--reset", "-r", help="Reset onboarding state to simulate first-run experience"),
 ):
     """Run interactive first-time setup and onboarding wizard."""
     from .services.onboarding_service import OnboardingService
     from .ui.onboarding_wizard import run_onboarding_wizard
 
     svc = OnboardingService()
+    if reset:
+        svc.reset()
+        console.print("[bold green][ok] Onboarding state reset. Next run will trigger setup.[/bold green]")
+        return
     if force:
         svc.reset()
     run_onboarding_wizard(svc, interactive=sys.stdin.isatty())

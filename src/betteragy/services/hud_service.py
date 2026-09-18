@@ -133,9 +133,30 @@ def render_statusline_hud(payload: dict) -> str:
     else:
         tok_badge = ""
 
+    # Active task progress pill (from tasks.db)
+    task_badge = ""
+    try:
+        from ..mcp.task_db import TaskDB
+        db = TaskDB()
+        sess = db.get_active_session()
+        if sess:
+            total_t = sess.get("total_tasks") or 0
+            comp_t = sess.get("completed_tasks") or 0
+            tasks = db.get_tasks(session_id=sess["id"])
+            # Find in_progress task or first pending
+            curr = next((t for t in tasks if t.get("status") == "in_progress"), None)
+            if not curr and tasks:
+                curr = next((t for t in tasks if t.get("status") == "pending"), None)
+            if curr:
+                t_title = curr["title"][:22] + ".." if len(curr["title"]) > 22 else curr["title"]
+                ratio = f"[{comp_t}/{total_t}]" if total_t > 0 else ""
+                task_badge = f"\033[48;2;24;24;27m\033[38;2;245;158;11m\033[1m ◼ {ratio} {t_title} \033[0m"
+    except Exception:
+        pass
+
     # Quota pill
     q_color = "\033[38;2;52;211;153m" if remaining_pct >= 50 else ("\033[38;2;251;191;36m" if remaining_pct >= 20 else "\033[38;2;248;113;113m")
     quota_badge = f"\033[48;2;30;41;59m {q_color}\033[1m5h:{remaining_pct}%\033[0m\033[48;2;30;41;59m \033[0m"
 
-    pills = [p for p in [model_badge, dur_badge, tok_badge, quota_badge] if p]
+    pills = [p for p in [model_badge, dur_badge, tok_badge, task_badge, quota_badge] if p]
     return " ".join(pills)

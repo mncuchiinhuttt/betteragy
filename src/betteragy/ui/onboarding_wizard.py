@@ -24,7 +24,9 @@ def _step_accounts(svc: OnboardingService, interactive: bool) -> None:
             badge = "[bold green][*] Active[/]" if a.get("active") else "[dim][+] Ready[/]"
             table.add_row(badge, a["email"])
         console.print(table)
-        console.print(f"[bold green][ok] Imported {len(accs)} account(s) from Keychain.[/bold green]")
+        console.print(f"[bold green][ok] Imported {len(accs)} account(s) from Keychain & OMP.[/bold green]")
+        if interactive:
+            Prompt.ask("\n[dim]Press Enter to proceed to Step 2...[/dim]", default="")
     else:
         console.print("[yellow][!] No accounts detected in Keychain.[/yellow]")
         if interactive and Confirm.ask("Connect a Google account via browser OAuth now?", default=True):
@@ -50,27 +52,35 @@ def _step_harness(svc: OnboardingService, interactive: bool) -> str:
         profile = "strict" if choice == "1" else "balanced"
     res = svc.setup_harness(profile=profile)
     console.print(f"[bold green][ok] Installed {res['profile']} harness in agy rules & GEMINI.md[/bold green]")
+    if interactive:
+        Prompt.ask("\n[dim]Press Enter to proceed to Step 3...[/dim]", default="")
     return profile
-
 
 def _step_mcp(svc: OnboardingService) -> None:
     console.print("\n[bold cyan]Step 3/5: MCP Task Planning Server[/bold cyan]")
     console.print("[dim]Registers 'betteragy-todo' stdio server in ~/.gemini/config/mcp_config.json.[/dim]")
     svc.setup_mcp_server()
-    console.print("[bold green][ok] Registered 'betteragy-todo' MCP server.[/bold green]")
-
-
+    console.print("[bold green][ok] Registered 'betteragy-todo' & memory MCP servers.[/bold green]")
+    if hasattr(svc, "mcp_reg"):
+        svc.mcp_reg.install()
+    # Optional pause in step 3
+    # proceed to step 4
 def _step_shell(svc: OnboardingService, interactive: bool) -> None:
-    console.print("\n[bold cyan]Step 4/5: Shell Alias & Autonomous Flag[/bold cyan]")
+    console.print("\n[bold cyan]Step 4/5: Recommended Agent Launch & Shell Integration[/bold cyan]")
+    console.print(
+        "  [bold white]• Recommended Command:[/] [bold cyan]betteragy agent[/bold cyan]\n"
+        "    [dim]Launches agy with maximum reasoning effort (--effort high) and auto-routes\n"
+        "    through Betteragy auto-rotation proxy without manual environment setup.[/dim]\n"
+    )
     do_alias = True
     if interactive:
-        do_alias = Confirm.ask("Add 'alias agy=\"agy --effort high --dangerously-skip-permissions\"' to shell profile?", default=True)
+        do_alias = Confirm.ask("Also add 'alias agy=\"betteragy agent\"' to your shell profile?", default=True)
     if do_alias:
         res = svc.setup_shell_alias()
         if res.get("already_existed"):
             console.print(f"[yellow][~] Alias already present in {res['target']}[/yellow]")
         else:
-            console.print(f"[bold green][ok] Added autonomous alias to {res['target']}[/bold green]")
+            console.print(f"[bold green][ok] Added 'agy' alias pointing to 'betteragy agent' in {res['target']}[/bold green]")
 
 
 def _step_summary(svc: OnboardingService, profile: str) -> None:
@@ -82,7 +92,8 @@ def _step_summary(svc: OnboardingService, profile: str) -> None:
         f"  [bold green][x][/] Deep Reasoning: [bold white]Active[/] (Profile: [cyan]{diag['harness_profile']}[/])",
         f"  [bold green][x][/] MCP Planning: [bold white]Active[/] (Server: [cyan]betteragy-todo[/])",
         f"  [bold green][x][/] Shell Alias: [bold white]{'Configured' if diag['shell_alias_configured'] else 'Skipped'}[/] ({diag['target_shell_file']})",
-        "\n[dim]All agy sessions will now automatically benefit from deep thinking and auto-rotation.[/dim]",
+        "\n[bold white]To start coding with full reasoning & auto-rotation, simply run:[/bold white]",
+        "  [bold cyan]betteragy agent[/bold cyan]   [dim](or 'agy' if alias was added)[/dim]",
     ]
     console.print(Panel("\n".join(summary_lines), title="[~] Betteragy Ready", border_style="green"))
 
